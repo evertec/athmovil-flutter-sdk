@@ -20,10 +20,11 @@ Before we get started, let’s configure your project:
 ### Payment Button SDK path dependency
 Add the checkout button SDK dependency to your project as a file. 
 Clone the project in a folder with the name you want and copy it to your project path.
-Add the path dependencies.
+Add the path dependency.
 
 ```yaml
-athmovil_checkout_flutter:
+dependencies:
+  athmovil_checkout_flutter:
     path: ../any_name_folder
 ```
 
