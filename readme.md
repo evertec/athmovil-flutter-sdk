@@ -28,7 +28,7 @@ dependencies:
     path: ../any_name_folder
 ```
 
-### Payment Button SDK pub.dev dependency (In process)
+### Payment Button SDK dependency
 Add the Payment Button SDK dependency to your project.
 ```yaml
 dependencies:
