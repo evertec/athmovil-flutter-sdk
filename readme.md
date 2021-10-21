@@ -28,13 +28,6 @@ dependencies:
     path: ../any_name_folder
 ```
 
-### Payment Button SDK dependency
-Add the Payment Button SDK dependency to your project.
-```yaml
-dependencies:
-  athmsdk: 1.0.0
-```
-
 ### Dependencies
 The Payment Button SDK uses these dependencies.
 ```yaml
