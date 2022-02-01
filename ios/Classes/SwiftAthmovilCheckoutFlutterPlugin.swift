@@ -66,8 +66,9 @@
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: jsonResponse
                 )
+                return true
             }
-            return true
+            return false
         }
         
         // On Resume Event for iOS
