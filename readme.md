@@ -156,8 +156,8 @@ ATHMovilPayment(
 | `total` | Double | Yes | Total amount to be paid by the end user. |
 | `subtotal` | Double | No | Optional  variable to display the payment subtotal (if applicable) |
 | `tax` | Double | No | Optional variable to display the payment tax (if applicable). |
-| `metadata1` | String | Yes | Required variable that can be left empy or filled with additional transaction information. |
-| `metadata2` | String | Yes | Required variable that can be left empy or filled with additional transaction information. |
+| `metadata1` | String | Yes | Required variable that can be left empty or filled with additional transaction information. Max length 40 characters. |
+| `metadata2` | String | Yes | Required variable that can be left empty or filled with additional transaction information. Max length 40 characters. |
 | `items` | Array | No | Optional variable to display the items that the user is purchasing on ATH Móvil's payment screen. Items on the array are expected in the following order: (“name”, “desc”, "quantity", “price”, “metadata”) |
 
 In the request make sure you comply with the following requirements for `ATHMovilPayment` object, otherwise you will receive an exception on the callback:
