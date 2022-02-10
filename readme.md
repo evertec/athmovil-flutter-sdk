@@ -156,8 +156,8 @@ ATHMovilPayment(
 | `total` | Double | Yes | Total amount to be paid by the end user. |
 | `subtotal` | Double | No | Optional  variable to display the payment subtotal (if applicable) |
 | `tax` | Double | No | Optional variable to display the payment tax (if applicable). |
-| `metadata1` | String | No | Optional variable to attach data to the payment object. |
-| `metadata2` | String | No | Optional variable to attach data to the payment object. |
+| `metadata1` | String | Yes | Optional variable to attach data to the payment object. |
+| `metadata2` | String | Yes | Optional variable to attach data to the payment object. |
 | `items` | Array | No | Optional variable to display the items that the user is purchasing on ATH Móvil's payment screen. Items on the array are expected in the following order: (“name”, “desc”, "quantity", “price”, “metadata”) |
 
 In the request make sure you comply with the following requirements for `ATHMovilPayment` object, otherwise you will receive an exception on the callback:
