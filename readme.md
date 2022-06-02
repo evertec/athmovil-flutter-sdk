@@ -53,11 +53,13 @@ dependencies {
 
 ### Manifest
 Configure the activity where the payment response will be sent to on your manifest.
-(**Note: If your app targets Android 11 (API Level 30) or higher, you must include the QUERY_ALL_PACKAGES permission❗️**)
+(**Note: You no longer need to add the QUERY _ALL_PACKAGES permission, Now you need to add the packaged mentioned below**)
 
 ```xml
-<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-...
+ <queries>
+    <package android:name="com.evertec.athmovil.android" />
+</queries>
+ ...
 <activity
     android:name=".Activity">
     <intent-filter>
