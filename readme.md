@@ -211,6 +211,16 @@ In some error cases payment responses may not be sent back to your application, 
 
 To mitigate these cases the button has a method verifies the status of the transaction if the payment process was interrupted. The method can take a maximum of 30 seconds to respond, so consider managing this wait time from a user experience perspective.
 
+@override
+
+void didChangeDependencies() {
+
+Provider.of<PaymentViewModel>(context, listen: false).fetchInitialValues();
+
+super.didChangeDependencies();
+
+}
+
 #### Handle all payment responses.
 When a transaction is completed, canceled or expired a response is sent back to the URL scheme that was configured on the payment. Implement the `ATHMovilPaymentResponseListener` on the activity of the configured scheme.
 ```dart
