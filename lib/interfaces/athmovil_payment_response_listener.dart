@@ -8,4 +8,6 @@ abstract class ATHMovilPaymentResponseListener {
   void onExpiredPayment(ATHMovilPaymentResponse athMovilPaymentResponse);
 
   void onPaymentException(String error, String description);
+
+  void onFailedPayment(ATHMovilPaymentResponse athMovilPaymentResponse);
 }

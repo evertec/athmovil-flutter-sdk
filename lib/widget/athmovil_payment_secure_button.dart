@@ -3,15 +3,17 @@ import 'package:athmovil_checkout_flutter/model/athmovil_payment.dart';
 import 'package:athmovil_checkout_flutter/open_athmovil.dart';
 import 'package:athmovil_checkout_flutter/util/constants_util.dart';
 import 'package:flutter/material.dart';
+import 'package:athmovil_checkout_dummy/view_models/payment_view_model.dart';
+import 'package:provider/provider.dart';
 
-class ATHMovilPaymentButton extends StatelessWidget {
+class ATHMovilPaymentSecureButton extends StatelessWidget {
   final Style? style;
   final Lang? lang;
   final String? buildType;
   final ATHMovilPaymentResponseListener listener;
   final ATHMovilPayment athMovilPayment;
 
-  ATHMovilPaymentButton({
+  ATHMovilPaymentSecureButton({
     Key? key,
     this.style,
     this.lang,
@@ -21,12 +23,11 @@ class ATHMovilPaymentButton extends StatelessWidget {
   }) : super(key: key);
 
   // TODO discuss with David about validate the athMovilPayment (Null Safety or Assert for dev mode)
-
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: () async {
-        await AthmovilCheckoutFlutter.openATHMovil(
+        await AthmovilCheckoutFlutter.sendPayment(
           athMovilPayment: athMovilPayment,
           buildType: buildType,
           athMovilPaymentResponseListener: listener,

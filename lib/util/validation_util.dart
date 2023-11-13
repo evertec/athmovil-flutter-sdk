@@ -46,6 +46,12 @@ class ATHMovilValidationUtil {
       _exception = ATHMovilException(
           exceptionMessage: ConstantsUtil.ATHM_METADATA2_ERROR_MESSAGE,
           exceptionTitle: ConstantsUtil.ATHM_REQUEST_EXCEPTION_TITLE);
+    } else if ((athMovilPayment.timeout != null) &&
+        (athMovilPayment.timeout! > 0 && athMovilPayment.timeout! < 60 ||
+            athMovilPayment.timeout! > 600)) {
+      _exception = ATHMovilException(
+          exceptionMessage: ConstantsUtil.ATHM_METADATA2_ERROR_MESSAGE,
+          exceptionTitle: ConstantsUtil.ATHM_REQUEST_EXCEPTION_TITLE);
     }
     validatePurchaseItemsData(athMovilPayment);
     return _exception;

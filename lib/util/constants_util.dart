@@ -1,5 +1,9 @@
 import 'package:flutter/cupertino.dart';
 
+enum Style { orange, light, dark }
+
+enum Lang { en, es }
+
 class ConstantsUtil {
   static const String ATHM_PACKAGE_NAME = "athmovil_checkout_flutter";
 
@@ -26,13 +30,16 @@ class ConstantsUtil {
   static const String ATHM_TXT_BTN_WHITE_ES = "pay-button-image-white-es.png";
 
   /// ERROR MESSAGES
+  static const String ATHM_FAILED_RESULT = "FailedPayment";
   static const String ATHM_CANCELLED_RESULT = "CancelledPayment";
   static const String ATHM_EXPIRED_RESULT = "ExpiredPayment";
   static const String ATHM_EXPIRED = "EXPIRED";
   static const String ATHM_CANCELLED = "CANCELLED";
+  static const String ATHM_FAILED = "FAILED";
   static const String ATHM_COMPLETED = "COMPLETED";
   static const String ATHM_CANCELLED_iOS_RESULT = "cancelled";
   static const String ATHM_EXPIRED_iOS_RESULT = "expired";
+  static const String ATHM_FAILED_iOS_RESULT = "failed";
   static const String ATHM_PAYMENT_VALIDATION_FAILED =
       "Error getting response from webservice";
   static const String ATHM_NULL_PUBLICTOKEN_ERROR_MESSAGE =
@@ -69,6 +76,9 @@ class ConstantsUtil {
       "Url scheme value is invalid.";
   static const String ATHM_PAYMENT_ERROR_MESSAGE =
       "ATHMovilPayment is invalid.";
+  static const String ATHM_EXCEPTION_TITLE = "Something went wrong...";
+  static const String ATHM_EXCEPTION_MESSAGE =
+      "Sorry for the inconvenience. Please try again later.";
   static const String ATHM_RESPONSE_EXCEPTION_TITLE = "Error in Response";
   static const String ATHM_REQUEST_EXCEPTION_TITLE = "Error in Request";
   static const String ATHM_EXCEPTION = "exception";

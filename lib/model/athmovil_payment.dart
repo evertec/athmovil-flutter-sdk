@@ -12,6 +12,7 @@ class ATHMovilPayment {
     this.metadata1,
     this.metadata2,
     this.items,
+    this.phoneNumber,
   });
 
   final String? businessToken;
@@ -24,6 +25,7 @@ class ATHMovilPayment {
   String? metadata2;
   String? paymentId;
   final List<ATHMovilItem>? items;
+  String? phoneNumber;
 
   factory ATHMovilPayment.fromMap(Map<String, dynamic> data) {
     return ATHMovilPayment(
@@ -68,12 +70,11 @@ class ATHMovilPayment {
         'metadata1': metadata1,
         'metadata2': metadata2,
         'itemsSelectedList': items,
-        //ios names
-        //'publicToken': businessToken,
         'items': items,
         'scheme': callbackSchema,
         'version': "3.0",
         'traceId': paymentId,
-        'expiresIn': timeout
+        'expiresIn': timeout,
+        'phoneNumber': phoneNumber
       };
 }

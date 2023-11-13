@@ -21,11 +21,20 @@ class ConstantsUtil {
         const val ATHM_BUSINESS_TOKEN = "businessToken"
         const val ATHM_PAYMENT_RESULT = "paymentResult"
         const val ATHM_CANCELLED_RESULT = "CancelledPayment"
+        const val ATHM_FAILED_RESULT = "FailedPayment";
+        const val ATHM_COMPLETED_RESULT = "CompletedPayment";
         const val ATHM_DUMMY_TOKEN = "dummy"
-        const val ATHM_INTERNAL_TEST_URL = "https://www.athmovil.com"
+        const val ATHM_INTERNAL_TEST_URL = "https://192.168.234.77:8082"
         const val ATHM_PRODUCTION_URL = "https://www.athmovil.com"
-        const val ATHM_PILOTO_URL = "https://www.athmovil.com"
-
+        const val ATHM_PILOTO_URL = "https://piloto.athmovil.com"
+        const val ATHM_AWS_QA_URL = "ozm9fx7yw5-vpce-0c7145d0436fe328e.execute-api.us-east-1.amazonaws.com"
+        const val ATHM_AWS_CERT_URL = "gej11zn24l-vpce-009e80de2a5fcea32.execute-api.us-east-1.amazonaws.com"
+        const val ATHM_AWS_PROD_URL = "ze9tdonfjl-vpce-0dbf78eed6413b115.execute-api.us-east-1.amazonaws.com"
+        const val ATHM_API_PAYMENT = "/api/business-transaction/ecommerce/payment"
+        const val ATHM_API_AUTHORIZATION = "/api/business-transaction/ecommerce/authorization"
+        const val ATHM_SEND_PAYMENT = "sendPayment"
+        const val ATHM_SEND_PAYMENT_RESULT = "sendPaymentResult"
+        
     }
 
     object ErrorConstants{
@@ -52,10 +61,11 @@ class ConstantsUtil {
         const val ATHM_REQUEST_EXCEPTION_TITLE = "Error in request"
         const val ATHM_RESPONSE_NULL_EXCEPTION = "Empty response."
         const val ATHM_TAX_NULL_LOG_MESSAGE = "Tax data type value is invalid."
+        const val ATHM_RESPONSE_EXCEPTION = "Sorry for the inconvenience. Please try again later."
 
         const val ATHM_DATE_PATTERN = "EEE MMM dd HH:mm:ss zzz yyyy"
         const val ATHM_EXCEPTION = "exception"
         const val ATHM_ERROR_CODE = "errorCode"
-        const val ATHM_EXCEPTION_CAUSE = "exceptionCause"
+        const val ATHM_EXCEPTION_CAUSE = "exceptionCause" 
     }
 }

@@ -5,6 +5,8 @@ import 'package:athmovil_checkout_flutter/model/athmovil_payment_response.dart';
 import 'package:athmovil_checkout_flutter/util/constants_util.dart';
 import 'package:athmovil_checkout_flutter/widget/athmovil_payment_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:athmovil_checkout_flutter/generated/l10n.dart';
 
 void main() {
   runApp(MyApp());
@@ -14,6 +16,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      localizationsDelegates: [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.delegate.supportedLocales,
       title: "ATHM Checkout Flutter Demo",
       debugShowCheckedModeBanner: false,
       home: MyWidget(),
@@ -101,6 +110,15 @@ class _MyWidgetState extends State<MyWidget>
   void onCancelledPayment(ATHMovilPaymentResponse athMovilPaymentResponse) {
     _showATHMPaymentResult(
       title: 'Cancelled Payment',
+      content: SizedBox.shrink(),
+    );
+    // TODO If its possible to get the referenced data if not remove it.
+  }
+
+  @override
+  void onFailedPayment(ATHMovilPaymentResponse athMovilPaymentResponse) {
+    _showATHMPaymentResult(
+      title: 'Failed Payment',
       content: SizedBox.shrink(),
     );
     // TODO If its possible to get the referenced data if not remove it.
