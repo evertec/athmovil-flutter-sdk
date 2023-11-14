@@ -163,6 +163,38 @@ class ATHMovilPaymentResponse {
     );
   }
 
+  static ATHMovilPaymentResponse setChangeStatusPaymentResponse(String status) {
+    return ATHMovilPaymentResponse(
+      publicToken: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.businessToken,
+      callbackSchema: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.callbackSchema,
+      total: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.total,
+      timeout: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.timeout,
+      status: status,
+      date: getDate(""),
+      subtotal: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.subtotal,
+      tax:
+          ATHMovilPaymentSingleton.athMovilPaymentSingleton.athMovilPayment.tax,
+      metadata1: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.metadata1,
+      metadata2: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.metadata2,
+      items: ATHMovilPaymentSingleton
+          .athMovilPaymentSingleton.athMovilPayment.items,
+      referenceNumber: "",
+      dailyTransactionID: "",
+      name: "",
+      phoneNumber: "",
+      email: "",
+      fee: 0.0,
+      netAmount: 0.0,
+    );
+  }
+
   static double dataToDouble(double num) {
     return double.parse(num.toStringAsFixed(2));
   }

@@ -2,7 +2,7 @@
 
 
 ## Introduction
-ATH Móvil's Payment Button SDK provides a simple, secure and fast checkout experience to customers paying on your Flutter application. After integrating our Payment Button on your app you will be able to receive real time payments from more than 1.5 million ATH Móvil users.
+ATH Móvil's Payment Secure Button SDK provides a simple, secure and fast checkout experience to customers paying on your Flutter application. After integrating our Payment Secure Button on your app you will be able to receive real time payments from more than 1.5 million ATH Móvil users.
 
 
 ## Prerequisites
@@ -17,31 +17,27 @@ If you need help signing up, adding a card or have any other question please ref
 ## Installation
 Before we get started, let’s configure your project:
 
-### Payment Button SDK path dependency
-Add the checkout button SDK dependency to your project as a file. 
-Clone the project in a folder with the name you want and copy it to your project path.
-Add the path dependency.
-
+### Payment Secure Button SDK dependency
+Add the Payment Secure Button SDK dependency to your project.
 ```yaml
 dependencies:
-  athmovil_checkout_flutter:
-    path: ../any_name_folder
+  athmsdk: 1.0.0
 ```
 
 ### Dependencies
-The Payment Button SDK uses these dependencies.
+The Payment Secure Button SDK uses these dependencies.
 ```yaml
 dependencies:
   async: ^2.6.1
   uuid: 3.0.4
-  intl: ^0.17.0
+  intl: ^0.18.1
 ```
 
 ## Android Installation
 Before we get started, let’s configure your Android project:
 
 ### Dependencies
-Add the Payment Button SDK dependencies to your project.
+Add the Payment Secure Button SDK dependencies to your project.
 ```java
 dependencies {
     implementation 'androidx.annotation:annotation:1.2.0'
@@ -53,13 +49,11 @@ dependencies {
 
 ### Manifest
 Configure the activity where the payment response will be sent to on your manifest.
-(**Note: You no longer need to add the QUERY _ALL_PACKAGES permission, Now you need to add the packaged mentioned below**)
+(**Note: If your app targets Android 11 (API Level 30) or higher, you must include the QUERY_ALL_PACKAGES permission❗️**)
 
 ```xml
- <queries>
-    <package android:name="com.evertec.athmovil.android" />
-</queries>
- ...
+<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+...
 <activity
     android:name=".Activity">
     <intent-filter>
@@ -74,7 +68,7 @@ Configure the activity where the payment response will be sent to on your manife
 Before we get started, let’s configure your iOS project:
 
 ### Pods
-Run the pod install command to add the Payment Button SDK dependencies to your project.
+Run the pod install command to add the Payment SecureButton SDK dependencies to your project.
 ```shell script
 % pod install
 ```
@@ -98,14 +92,14 @@ Add the URL configuration to the .plist file.
 ```
 
 ## Usage
-To integrate ATH Móvil’s Payment Button to your Flutter application follow these steps:
+To integrate ATH Móvil’s Payment Secure Button to your Flutter application follow these steps:
 
 ### Widget
 Add the “Pay with ATH Móvil” button as a widget.
 ```dart
-// ATHMovilPaymentButton property enum Style { orange, light, dark }
-// ATHMovilPaymentButton property enum Lang { en, es }
-ATHMovilPaymentButton(style: Style.orange,
+// ATHMovilPaymentSecureButton property enum Style { orange, light, dark }
+// ATHMovilPaymentSecureButton property enum Lang { en, es }
+ATHMovilPaymentSecureButton(style: Style.orange,
                       lang: Lang.en,
                       athMovilPayment: ATHMovilPayment(), //ATHMovilPayment
                       listener: this,) //ATHMovilPaymentResponseListener
@@ -132,7 +126,7 @@ Add all required imports to the dart file of your checkout screen.
 import 'athmovil_checkout_flutter/interfaces/athmovil_payment_response_listener.dart';
 import 'athmovil_checkout_flutter/model/athmovil_payment.dart';
 import 'athmovil_checkout_flutter/model/athmovil_payment_response.dart';
-import 'athmovil_checkout_flutter/widget/athmovil_payment_button.dart';
+import 'athmovil_checkout_flutter/widget/athmovil_payment_secure_button.dart';
 ```
 
 Create an `ATHMovilPayment` object on the main class of the file.
@@ -147,19 +141,21 @@ ATHMovilPayment(
       metadata1: , //String
       metadata2: , //String
       items: , //ATHMovilItem
+      phoneNumber: , //String
     );
 ```
 
 | Method  | Data Type | Required | Description |
 | ------------- |:-------------:|:-----:| ------------- |
+| `phoneNumber` | String | Phone number of customer. |
 | `businessToken` | String | Yes | Determines the Business account where the payment will be sent to. |
 | `callbackSchema` | String | Yes | Android schema configuration name of manifest / iOS URL Schema. |
-| `timeout` | Int | No | Expires the payment process if the payment hasn't been completed by the user after the provided amount of time (in seconds). Countdown starts immediately after the user presses the Payment Button. Default value is set to 600 seconds (10 mins). |
+| `timeout` | Int | No | Expires the payment process if the payment hasn't been completed by the user after the provided amount of time (in seconds). Countdown starts immediately after the user presses the Payment Secure Button. Default value is set to 600 seconds (10 mins). |
 | `total` | Double | Yes | Total amount to be paid by the end user. |
 | `subtotal` | Double | No | Optional  variable to display the payment subtotal (if applicable) |
 | `tax` | Double | No | Optional variable to display the payment tax (if applicable). |
-| `metadata1` | String | Yes | Required variable that can be left empty or filled with additional transaction information. Max length 40 characters. |
-| `metadata2` | String | Yes | Required variable that can be left empty or filled with additional transaction information. Max length 40 characters. |
+| `metadata1` | String | No | Optional variable to attach data to the payment object. |
+| `metadata2` | String | No | Optional variable to attach data to the payment object. |
 | `items` | Array | No | Optional variable to display the items that the user is purchasing on ATH Móvil's payment screen. Items on the array are expected in the following order: (“name”, “desc”, "quantity", “price”, “metadata”) |
 
 In the request make sure you comply with the following requirements for `ATHMovilPayment` object, otherwise you will receive an exception on the callback:
@@ -173,6 +169,7 @@ In the request make sure you comply with the following requirements for `ATHMovi
 | `metadata2` | Spaces, letters and numbers, max length 40|
 | `publicToken` | String |
 | `timeout` | Integer between 60 and 600 |
+| `phoneNumber` | String | Phone number of customer. |
 
 If you provide items in the request make sure you comply with these requirements for the `ATHMovilItem` object:
 
@@ -211,16 +208,6 @@ In some error cases payment responses may not be sent back to your application, 
 
 To mitigate these cases the button has a method verifies the status of the transaction if the payment process was interrupted. The method can take a maximum of 30 seconds to respond, so consider managing this wait time from a user experience perspective.
 
-@override
-
-void didChangeDependencies() {
-
-Provider.of<PaymentViewModel>(context, listen: false).fetchInitialValues();
-
-super.didChangeDependencies();
-
-}
-
 #### Handle all payment responses.
 When a transaction is completed, canceled or expired a response is sent back to the URL scheme that was configured on the payment. Implement the `ATHMovilPaymentResponseListener` on the activity of the configured scheme.
 ```dart
@@ -252,6 +239,14 @@ Handle the payment response using the following methods:
   }
 ```
 
+* Failed
+```dart
+@override
+  void onFailedPayment(ATHMovilPaymentResponse athMovilPaymentResponse) {
+    //Handle response
+  }
+```
+
 * Exception
 ```dart
 @override
@@ -261,7 +256,7 @@ Handle the payment response using the following methods:
 ```
 
 ## Testing
-To test your Payment Button integration you can make payments in production using the Private and Public tokens of your ATH Móvil Business account or you can use the public token "dummy" to make simulated payments. When you use the token "dummy":
+To test your Payment Secure Button integration you can make payments in production using the Private and Public tokens of your ATH Móvil Business account or you can use the public token "dummy" to make simulated payments. When you use the token "dummy":
 * The ATH Movil production application will simulate a payment.
 * No end user credentials need to be provided to interact with the simulated payment.
 * Completed, cancelled and expired payments can be tested.

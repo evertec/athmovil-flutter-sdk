@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'athmovil_checkout_flutter'
-  s.version          = '1.0.0'
+  s.version          = '0.0.2'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 A new flutter plugin project.

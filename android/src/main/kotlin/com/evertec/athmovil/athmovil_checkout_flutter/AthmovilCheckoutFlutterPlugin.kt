@@ -42,6 +42,19 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import com.evertec.athmovil.athmovil_checkout_flutter.models.PaymentRequest
+import com.evertec.athmovil.athmovil_checkout_flutter.models.PaymentResponse
+import com.evertec.athmovil.athmovil_checkout_flutter.models.PurchaseReturned
+import com.evertec.athmovil.athmovil_checkout_flutter.models.AuthorizationResponse
+import com.google.gson.Gson
+import com.google.gson.JsonIOException
+import java.lang.Exception
+import android.widget.ProgressBar
+import android.app.AlertDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 /** AthmovilCheckoutFlutterPlugin */
 class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -54,6 +67,8 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     private lateinit var context: Context
     private lateinit var buildType: String
     private lateinit var postsService: PostService
+    private lateinit var alertDialog: AlertDialog
+
 
     /**
      * Default constructor for AthmovilCheckoutFlutterPlugin.
@@ -82,31 +97,35 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         registrar.addNewIntentListener(plugin.resultListener)
     }
 
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        if (call.method == RequestConstants.ATHM_CHANNEL_OPENATHM) {
-            if (call.hasArgument(RequestConstants.ATHM_PAYMENT)) {
-                val paymentArguments =
-                    call.argument<String>(RequestConstants.ATHM_PAYMENT).toString()
-                val timeoutArguments =
-                    call.argument<Int>(RequestConstants.ATHM_TIMEOUT) ?: 0
-                val paymentArgumentsJson = JSONObject(paymentArguments)
-                val paymentId = call.argument<String>(RequestConstants.ATHM_PAYMENT_ID).toString()
-                PaymentResultFlag.getApplicationInstance().paymentRequest = ATHMPayment(
-                    paymentId,
-                    paymentArgumentsJson.getString(RequestConstants.ATHM_BUSINESS_TOKEN),
-                    paymentArguments
-                )
-                buildType = call.argument<String>(RequestConstants.ATHM_BUILD_TYPE).toString()
-
+    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) { 
+        val paymentArguments = call.argument<String>(RequestConstants.ATHM_PAYMENT).toString()
+        val timeoutArguments = call.argument<Int>(RequestConstants.ATHM_TIMEOUT) ?: 0
+        val paymentArgumentsJson = JSONObject(paymentArguments)
+        val paymentId = call.argument<String>(RequestConstants.ATHM_PAYMENT_ID).toString()
+        val athmPayment = ATHMPayment(
+            paymentId,
+            paymentArgumentsJson.getString(RequestConstants.ATHM_BUSINESS_TOKEN),
+            paymentArguments
+        )
+        // Set the Payment Request in the Singleton
+        PaymentResultFlag.getApplicationInstance().paymentRequest = athmPayment
+        buildType = call.argument<String>(RequestConstants.ATHM_BUILD_TYPE).toString()
+        if(call.hasArgument(RequestConstants.ATHM_PAYMENT)) {
+            //RESET TOKEN AUTHORIZATION
+            val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+            sharedPref?.edit()?.putString("flutter.authToken","")?.apply()
+            if(call.method == RequestConstants.ATHM_CHANNEL_OPENATHM) {                                      
                 execute(
                     json = paymentArguments,
                     timeout = validateTimeout(timeoutArguments.toLong()),
                     buildType = buildType
                 )
-            }
-        } else {
+            }else if(call.method == RequestConstants.ATHM_SEND_PAYMENT) {
+                _sendPayment(paymentArguments, timeoutArguments)
+            }        
+        }else{
             result.notImplemented()
-        }
+        }           
     }
 
     private fun validateTimeout(timeout: Long): Long {
@@ -130,12 +149,15 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     private fun execute(json: String, timeout: Long, buildType: String) {
         val athmInfo: PackageInfo
         var athmVersionCode = 0
-        Log.e("buildType", buildType)
         var athmBundleId: String = ""
         athmBundleId = if (buildType == "null") {
             RequestConstants.ATHM_APP_PATH
         } else {
-            RequestConstants.ATHM_APP_PATH + buildType
+            if(buildType == ".qacert"){
+                RequestConstants.ATHM_APP_PATH + ".qa"
+            }else{
+                RequestConstants.ATHM_APP_PATH + buildType
+            }
         }
         var intent = activity?.packageManager?.getLaunchIntentForPackage(athmBundleId)
         try {
@@ -160,27 +182,118 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     /// Validate Payment Response Section.
     ///
     private fun validateIntentResponse(@NonNull intent: Intent) {
-        ///
-        ///Extracting response from intent extras
-        ///
         val paymentResult: String? = intent.getStringExtra(RequestConstants.ATHM_PAYMENT_RESULT)
-        if (paymentResult == null) {
+        if (paymentResult == null) {            
             validateCurrentPaymentInMemory()
         } else {
+            try{
+                val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+                if(paymentReturn.status == RequestConstants.ATHM_COMPLETED_RESULT){
+                    //GET AUTHTOKEN
+                    val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+                    val authToken = sharedPref?.getString("flutter.authToken","") ?: ""
+                    if(authToken.isEmpty()){
+                        PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                        channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                    }else{
+                        _authorizationPayment(paymentResult,authToken);
+                    }
+                }else{
+                    PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                    channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                }
+            }catch (e: Exception){
+                channel.invokeMethod(
+                    ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
+                    ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
+                )
+            }
+
+        }
+    }
+
+    /**
+     * Call ATH Móvil service to authorizate payment transaction.
+     * @param paymentResult - paymentResult athm movil **/
+    private fun _authorizationPayment(paymentResult: String, authToken: String){
+        try{
+            showLoading()
+            var paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+            val url = baseUrlAWS()
+            val baseurl = "https://" + url
+            val retrofit: Retrofit = Retrofit.Builder()
+                .baseUrl(baseurl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(getHttpClient())
+                .build()
+            postsService = retrofit.create(PostService::class.java)
+            val call: retrofit2.Call<AuthorizationResponse> = postsService.authorizationPayment(url)
+            call.enqueue(object : Callback<AuthorizationResponse?> {
+                @Override
+                override fun onResponse(call: Call<AuthorizationResponse?>?, response: Response<AuthorizationResponse?>) {
+                    hideLoading()
+                    if (response.isSuccessful() && response.body() != null){
+                        //RESET TOKEN AUTHORIZATION
+                        val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+                        sharedPref?.edit()?.putString("flutter.authToken","")?.apply()
+                        //SET PARAMS RESPONSE AUTHORIZATION
+                        val referenceNumber =  response.body()?.data?.referenceNumber ?: ""
+                        val dailyTransactionID =  response.body()?.data?.dailyTransactionID ?: ""
+                        val fee =  response.body()?.data?.fee ?: 0.0
+                        val netAmount =  response.body()?.data?.netAmount ?: 0.0
+                        paymentReturn.referenceNumber = referenceNumber
+                        paymentReturn.dailyTransactionID = dailyTransactionID
+                        paymentReturn.fee = fee
+                        paymentReturn.netAmount = netAmount
+                        PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                        val paymentResultString: String = Gson().toJson(paymentReturn)
+                        channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
+                    } else {
+                        failedResult(paymentResult)
+                    }
+                }
+                @Override
+                override fun onFailure(call: Call<AuthorizationResponse?>?, t: Throwable) {
+                    hideLoading()
+                    failedResult(paymentResult)
+                }
+            })
+        }catch (e: Exception){
+            failedResult(paymentResult)
+        }
+    }
+
+    private fun failedResult(paymentResult: String){
+        hideLoading()
+        try {
+            val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+            paymentReturn.status = RequestConstants.ATHM_FAILED_RESULT
             PaymentResultFlag.getApplicationInstance().paymentRequest = null
-            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+            val paymentResultString: String = Gson().toJson(paymentReturn)
+            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
+        }catch (e: Exception){
+            PaymentResultFlag.getApplicationInstance().paymentRequest = null
+            channel.invokeMethod(
+                RequestConstants.ATHM_PAYMENT_RESULT,
+                RequestConstants.ATHM_FAILED_RESULT
+            )
         }
     }
 
     private fun validateCurrentPaymentInMemory() {
+        //GET AUTHTOKEN
+        val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+        val authToken = sharedPref?.getString("flutter.authToken","") ?: ""
         /// Check if the singleton has a valid payment
         val athmPayment: ATHMPayment? = PaymentResultFlag.getApplicationInstance().paymentRequest
-        PaymentResultFlag.getApplicationInstance().paymentRequest = null
-        /// If its the dummy case it will return always cancelled status
+        PaymentResultFlag.getApplicationInstance().paymentRequest = null       
         when {
-            athmPayment == null -> {
-                return
+            authToken.isNotEmpty() ->{// its validate authToken the new flow payment secure
+                return 
             }
+            athmPayment == null -> {
+                return        
+            } // its the dummy case it will return always cancelled status
             athmPayment.publicToken.lowercase(
                 Locale.getDefault()
             ) == RequestConstants.ATHM_DUMMY_TOKEN -> {
@@ -213,6 +326,9 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         var url: String = ""
         url = when (buildType) {
             ".qa" -> {
+                RequestConstants.ATHM_INTERNAL_TEST_URL
+            }
+            ".qacert" -> {
                 RequestConstants.ATHM_INTERNAL_TEST_URL
             }
             ".piloto" -> {
@@ -259,6 +375,76 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                 )
             }
         })
+    }
+
+     /**
+    * Call ATH Móvil service to send payment transaction.
+    * @param paymentArguments - Object Payment
+    * @param timeoutArguments - Timeout **/
+    private fun _sendPayment(paymentArguments: String, timeoutArguments: Int) {
+         showLoading()
+        val url = baseUrlAWS()
+        val paymentArgumentsJson = JSONObject(paymentArguments)
+        val paymentRequest = Gson()?.fromJson(paymentArguments, PaymentRequest::class.java)
+        paymentRequest.env = buildType
+        paymentRequest.timeout = timeoutArguments.toLong()
+        val baseurl = "https://" + url
+        val retrofit: Retrofit = Retrofit.Builder()
+            .baseUrl(baseurl)
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(getHttpClient())
+            .build()
+        postsService = retrofit.create(PostService::class.java)
+         val call: retrofit2.Call<PaymentResponse> = postsService.paymentPost(paymentRequest, url)
+         call.enqueue(object : Callback<PaymentResponse?> {
+             @Override
+             override fun onResponse(call: Call<PaymentResponse?>?, response: Response<PaymentResponse?>) {
+                hideLoading()
+                 if (response.isSuccessful() && response.body() != null){
+                     if( response.body()?.status == "success"){
+                         //SAVE AUTHTOKEN
+                         val authToken =  response.body()?.data?.authToken
+                         val sharedPref =  activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+                         val editor = sharedPref?.edit()
+                         editor?.putString("flutter.authToken",authToken)?.apply()
+                         //SET PAYMENT SECURE REQUEST
+                         val ecommerceId =  response.body()?.data?.ecommerceId
+                         val phoneNumber = paymentArgumentsJson.getString("phoneNumber")
+                         val publicToken = paymentArgumentsJson.getString(RequestConstants.ATHM_BUSINESS_TOKEN)
+                         paymentArgumentsJson.put("ecommerceId", ecommerceId)
+                         paymentArgumentsJson.put("phoneLine", phoneNumber)
+                         paymentArgumentsJson.put("publicToken", publicToken)
+                         paymentArgumentsJson.put("version", "3.0")
+                         paymentArgumentsJson.put("timeout", timeoutArguments.toString())
+                         paymentArgumentsJson.put("expiresIn", timeoutArguments.toString())
+                         //OPEN ATHM MOVIL
+                         execute(
+                             json = paymentArgumentsJson.toString(),
+                             timeout = validateTimeout(timeoutArguments.toLong()),
+                             buildType = buildType
+                         )
+                     }else{
+                         channel.invokeMethod(
+                             ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
+                             ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
+                         )
+                     }
+                 } else {
+                     channel.invokeMethod(
+                         ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
+                         ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
+                     )
+                 }
+             }
+             @Override
+             override fun onFailure(call: Call<PaymentResponse?>?, t: Throwable) {
+                 hideLoading()
+                 channel.invokeMethod(
+                     ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
+                     ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
+                 )
+             }
+         })
     }
 
     /**
@@ -309,6 +495,15 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
 
             // Handling headers for the entire app network calls
             //            addHeaders(builder);
+            val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
+            val authToken = sharedPref?.getString("flutter.authToken","") ?: ""
+            if(authToken?.isNotEmpty()){
+                builder.addInterceptor { chain ->
+                    val request = chain.request().newBuilder().addHeader("Authorization", "Bearer ${authToken}").build()
+                    chain.proceed(request)
+                }.build()
+            }
+
             builder.build()
         } catch (e: Exception) {
             OkHttpClient.Builder().build()
@@ -329,7 +524,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         (binding.lifecycle as HiddenLifecycleReference)
             .lifecycle
             .addObserver(LifecycleEventObserver { source, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {
+                if (event == Lifecycle.Event.ON_RESUME) {                    
                     validateCurrentPaymentInMemory()
                 }
             })
@@ -342,4 +537,42 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     override fun onDetachedFromActivityForConfigChanges() {
         channel.setMethodCallHandler(null)
     }
+
+    private fun baseUrlAWS() : String{
+        return when (buildType) {
+            ".qa" -> {
+                ConstantsUtil.RequestConstants.ATHM_AWS_QA_URL
+            }
+            ".qacert" -> {
+                ConstantsUtil.RequestConstants.ATHM_AWS_CERT_URL
+            }
+            else -> {
+                ConstantsUtil.RequestConstants.ATHM_AWS_PROD_URL
+            }
+        }
+    }
+
+    private fun showLoading() {
+        runBlocking {
+            GlobalScope.launch(Dispatchers.Main) {
+                val progressBar = ProgressBar(activity)
+                val alertDialogBuilder = AlertDialog.Builder(activity)
+                alertDialogBuilder.setView(progressBar)
+                alertDialogBuilder.setCancelable(false)
+                alertDialog = alertDialogBuilder.create()
+                alertDialog.show()
+            }
+        }
+    }
+
+    private fun hideLoading() {
+        runBlocking {
+            GlobalScope.launch(Dispatchers.Main) {
+                if (alertDialog.isShowing) {
+                    alertDialog.dismiss()
+                }
+            }
+        }
+    }
+
 }
