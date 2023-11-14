@@ -361,25 +361,11 @@
         }
 
         private func getURL() -> String {
-            if buildType == ".piloto"{
-                return "https://piloto.athmovil.com"
-            }else if buildType == ".qa"{
-                return "https://192.168.234.77:8090"
-            }else if buildType == ".qacert"{
-                return "https://192.168.234.77:8090"
-            }
             return "https://www.athmovil.com"
         }
 
         private var baseUrlAWS: String {
-            switch buildType {
-                case ".qa":
-                    return  "ozm9fx7yw5-vpce-0c7145d0436fe328e.execute-api.us-east-1.amazonaws.com"
-                case ".qacert":
-                    return  "gej11zn24l-vpce-009e80de2a5fcea32.execute-api.us-east-1.amazonaws.com"
-                default:
-                    return  "ze9tdonfjl-vpce-0dbf78eed6413b115.execute-api.us-east-1.amazonaws.com"
-            }
+            return  "ze9tdonfjl-vpce-0dbf78eed6413b115.execute-api.us-east-1.amazonaws.com"
         }
         
         struct ConsultTransaction: Encodable {
