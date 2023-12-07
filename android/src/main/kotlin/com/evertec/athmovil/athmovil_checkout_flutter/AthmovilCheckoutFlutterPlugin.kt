@@ -6,10 +6,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageInfo
-import android.content.pm.PackageManager.NameNotFoundException
 import android.net.Uri
-import android.util.Log
 import androidx.annotation.NonNull
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -47,7 +44,6 @@ import com.evertec.athmovil.athmovil_checkout_flutter.models.PaymentResponse
 import com.evertec.athmovil.athmovil_checkout_flutter.models.PurchaseReturned
 import com.evertec.athmovil.athmovil_checkout_flutter.models.AuthorizationResponse
 import com.google.gson.Gson
-import com.google.gson.JsonIOException
 import java.lang.Exception
 import android.widget.ProgressBar
 import android.app.AlertDialog
@@ -121,7 +117,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                     buildType = buildType
                 )
             }else if(call.method == RequestConstants.ATHM_SEND_PAYMENT) {
-                _sendPayment(paymentArguments, timeoutArguments)
+                sendPayment(paymentArguments, timeoutArguments)
             }        
         }else{
             result.notImplemented()
@@ -147,10 +143,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     }
 
     private fun execute(json: String, timeout: Long, buildType: String) {
-        val athmInfo: PackageInfo
-        var athmVersionCode = 0
-        var athmBundleId: String = ""
-        athmBundleId = if (buildType == "null") {
+        val athmBundleId = if (buildType == "null") {
             RequestConstants.ATHM_APP_PATH
         } else {
             if(buildType == ".qacert"){
@@ -160,12 +153,6 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
             }
         }
         var intent = activity?.packageManager?.getLaunchIntentForPackage(athmBundleId)
-        try {
-            athmInfo = context.packageManager.getPackageInfo(athmBundleId, 0)
-            athmVersionCode = athmInfo.versionCode
-        } catch (e: NameNotFoundException) {
-
-        }
         if (intent == null) {
             intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse(RequestConstants.ATHM_MARKET_URL)
@@ -196,7 +183,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                         PaymentResultFlag.getApplicationInstance().paymentRequest = null
                         channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
                     }else{
-                        _authorizationPayment(paymentResult,authToken);
+                        authorizationPayment(paymentResult)
                     }
                 }else{
                     PaymentResultFlag.getApplicationInstance().paymentRequest = null
@@ -215,24 +202,29 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     /**
      * Call ATH Móvil service to authorizate payment transaction.
      * @param paymentResult - paymentResult athm movil **/
-    private fun _authorizationPayment(paymentResult: String, authToken: String){
+    private fun authorizationPayment(paymentResult: String){
         try{
             showLoading()
-            var paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+            val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
             val url = baseUrlAWS()
-            val baseurl = "https://" + url
-            val retrofit: Retrofit = Retrofit.Builder()
-                .baseUrl(baseurl)
-                .addConverterFactory(GsonConverterFactory.create())
-                .client(getHttpClient())
-                .build()
-            postsService = retrofit.create(PostService::class.java)
-            val call: retrofit2.Call<AuthorizationResponse> = postsService.authorizationPayment(url)
+            val baseurl = "https://$url"
+            val retrofit: Retrofit? = getHttpClient()?.let {
+                Retrofit.Builder()
+                    .baseUrl(baseurl)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .client(it)
+                    .build()
+            }
+            postsService = retrofit?.create(PostService::class.java) ?: throw IllegalStateException("Retrofit instance is null")
+            val call: Call<AuthorizationResponse> = postsService.authorizationPayment(url)
             call.enqueue(object : Callback<AuthorizationResponse?> {
                 @Override
-                override fun onResponse(call: Call<AuthorizationResponse?>?, response: Response<AuthorizationResponse?>) {
+                override fun onResponse(
+                    call: Call<AuthorizationResponse?>,
+                    response: Response<AuthorizationResponse?>
+                ) {
                     hideLoading()
-                    if (response.isSuccessful() && response.body() != null){
+                    if (response.isSuccessful && response.body() != null){
                         //RESET TOKEN AUTHORIZATION
                         val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
                         sharedPref?.edit()?.putString("flutter.authToken","")?.apply()
@@ -253,7 +245,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                     }
                 }
                 @Override
-                override fun onFailure(call: Call<AuthorizationResponse?>?, t: Throwable) {
+                override fun onFailure(call: Call<AuthorizationResponse?>, t: Throwable) {
                     hideLoading()
                     failedResult(paymentResult)
                 }
@@ -306,7 +298,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
             }
 
             else -> {
-                verifyPaymentStatus(context, athmPayment)
+                verifyPaymentStatus(athmPayment)
             }
         }
     }
@@ -321,10 +313,9 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
      *
      * @param context - Application context **/
 
-    private fun verifyPaymentStatus(context: Context?, athmPayment: ATHMPayment?) {
+    private fun verifyPaymentStatus(athmPayment: ATHMPayment?) {
 
-        var url: String = ""
-        url = when (buildType) {
+        val url = when (buildType) {
             ".qa" -> {
                 RequestConstants.ATHM_INTERNAL_TEST_URL
             }
@@ -338,22 +329,24 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                 RequestConstants.ATHM_PRODUCTION_URL
             }
         }
-        val retrofit: Retrofit = Retrofit.Builder()
-            .baseUrl(url)
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(getHttpClient())
-            .build()
-        postsService = retrofit.create(PostService::class.java)
+        val retrofit: Retrofit? = getHttpClient()?.let {
+            Retrofit.Builder()
+                .baseUrl(url)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(it)
+                .build()
+        }
+        postsService = retrofit?.create(PostService::class.java) ?: throw IllegalStateException("Retrofit instance is null")
         val jsonObject = JsonObject()
         jsonObject.addProperty("publicToken", athmPayment?.publicToken)
         jsonObject.addProperty("paymentID", athmPayment?.paymentId)
-        val call: retrofit2.Call<JsonObject> = postsService.sendPost(jsonObject)
+        val call: Call<JsonObject> = postsService.sendPost(jsonObject)
         call.enqueue(object : Callback<JsonObject?> {
             @Override
-            override fun onResponse(call: Call<JsonObject?>?, response: Response<JsonObject?>) {
+            override fun onResponse(call: Call<JsonObject?>, response: Response<JsonObject?>) {
                 // pass response to the example activity
                 PaymentResultFlag.getApplicationInstance().paymentRequest = null
-                if (response.isSuccessful() && response.body() != null &&
+                if (response.isSuccessful && response.body() != null &&
                     !response.body().toString()
                         .contains(ConstantsUtil.ErrorConstants.ATHM_ERROR_CODE)
                 ) {
@@ -368,7 +361,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
             }
 
             @Override
-            override fun onFailure(call: Call<JsonObject?>?, t: Throwable) {
+            override fun onFailure(call: Call<JsonObject?>, t: Throwable) {
                 channel.invokeMethod(
                     ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
                     ConstantsUtil.ErrorConstants.ATHM_PAYMENT_VALIDATION_FAILED
@@ -381,26 +374,32 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     * Call ATH Móvil service to send payment transaction.
     * @param paymentArguments - Object Payment
     * @param timeoutArguments - Timeout **/
-    private fun _sendPayment(paymentArguments: String, timeoutArguments: Int) {
+    private fun sendPayment(paymentArguments: String, timeoutArguments: Int) {
          showLoading()
         val url = baseUrlAWS()
         val paymentArgumentsJson = JSONObject(paymentArguments)
-        val paymentRequest = Gson()?.fromJson(paymentArguments, PaymentRequest::class.java)
-        paymentRequest.env = buildType
-        paymentRequest.timeout = timeoutArguments.toLong()
-        val baseurl = "https://" + url
-        val retrofit: Retrofit = Retrofit.Builder()
-            .baseUrl(baseurl)
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(getHttpClient())
-            .build()
-        postsService = retrofit.create(PostService::class.java)
-         val call: retrofit2.Call<PaymentResponse> = postsService.paymentPost(paymentRequest, url)
-         call.enqueue(object : Callback<PaymentResponse?> {
+        val paymentRequest = Gson().fromJson(paymentArguments, PaymentRequest::class.java)
+        paymentRequest?.env = buildType
+        paymentRequest?.timeout = timeoutArguments.toLong()
+        val baseurl = "https://$url"
+        val retrofit: Retrofit? = getHttpClient()?.let {
+            Retrofit.Builder()
+                .baseUrl(baseurl)
+                .addConverterFactory(GsonConverterFactory.create())
+                .client(it)
+                .build()
+        }
+         postsService = retrofit?.create(PostService::class.java) ?: throw IllegalStateException("Retrofit instance is null")
+         val call: Call<PaymentResponse>? =
+             paymentRequest?.let { postsService.paymentPost(it, url) }
+         call?.enqueue(object : Callback<PaymentResponse?> {
              @Override
-             override fun onResponse(call: Call<PaymentResponse?>?, response: Response<PaymentResponse?>) {
+             override fun onResponse(
+                 call: Call<PaymentResponse?>,
+                 response: Response<PaymentResponse?>
+             ) {
                 hideLoading()
-                 if (response.isSuccessful() && response.body() != null){
+                 if (response.isSuccessful && response.body() != null){
                      if( response.body()?.status == "success"){
                          //SAVE AUTHTOKEN
                          val authToken =  response.body()?.data?.authToken
@@ -437,7 +436,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                  }
              }
              @Override
-             override fun onFailure(call: Call<PaymentResponse?>?, t: Throwable) {
+             override fun onFailure(call: Call<PaymentResponse?>, t: Throwable) {
                  hideLoading()
                  channel.invokeMethod(
                      ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
@@ -454,39 +453,35 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     private fun getHttpClient(): OkHttpClient? {
         return try {
             val builder: OkHttpClient.Builder = OkHttpClient.Builder()
-
-
             // Create a trust manager that does not validate certificate chains
             val trustAllCerts: Array<TrustManager> =
-                arrayOf<TrustManager>(object : X509TrustManager {
+                arrayOf(@SuppressLint("CustomX509TrustManager")
+                object : X509TrustManager {
                     @SuppressLint("TrustAllX509TrustManager")
                     @Override
                     override fun checkClientTrusted(
-                        chain: Array<java.security.cert.X509Certificate?>?,
+                        chain: Array<X509Certificate?>?,
                         authType: String?
-                    ) {
-                    }
+                    ) {}
 
                     @SuppressLint("TrustAllX509TrustManager")
                     @Override
                     override fun checkServerTrusted(
-                        chain: Array<java.security.cert.X509Certificate?>?,
+                        chain: Array<X509Certificate?>?,
                         authType: String?
-                    ) {
-                    }
+                    ) {}
 
-                    override fun getAcceptedIssuers(): Array<X509Certificate?>? {
+                    override fun getAcceptedIssuers(): Array<X509Certificate?> {
                         return arrayOf()
                     }
-                }
-                )
+                })
             // Install the all-trusting trust manager
             val sslContext: SSLContext = SSLContext.getInstance("SSL")
             sslContext.init(null, trustAllCerts, SecureRandom())
             // Create an ssl socket factory with our all-trusting manager
-            val sslSocketFactory: SSLSocketFactory = sslContext.getSocketFactory()
+            val sslSocketFactory: SSLSocketFactory = sslContext.socketFactory
             builder.sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
-            builder.hostnameVerifier { hostname, session -> true }
+            builder.hostnameVerifier { _, _ -> true }
 
             //Handling connection timeout fo prod
             builder.connectTimeout(30, TimeUnit.SECONDS)
@@ -494,12 +489,11 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                 .readTimeout(30, TimeUnit.SECONDS)
 
             // Handling headers for the entire app network calls
-            //            addHeaders(builder);
             val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
             val authToken = sharedPref?.getString("flutter.authToken","") ?: ""
-            if(authToken?.isNotEmpty()){
+            if(authToken.isNotEmpty()){
                 builder.addInterceptor { chain ->
-                    val request = chain.request().newBuilder().addHeader("Authorization", "Bearer ${authToken}").build()
+                    val request = chain.request().newBuilder().addHeader("Authorization", "Bearer $authToken").build()
                     chain.proceed(request)
                 }.build()
             }
@@ -511,7 +505,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     }
 
     override fun onDetachedFromActivity() {
-        channel.setMethodCallHandler(null);
+        channel.setMethodCallHandler(null)
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
@@ -523,8 +517,8 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         (binding.lifecycle as HiddenLifecycleReference)
             .lifecycle
-            .addObserver(LifecycleEventObserver { source, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {                    
+            .addObserver(LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
                     validateCurrentPaymentInMemory()
                 }
             })
@@ -541,13 +535,13 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     private fun baseUrlAWS() : String{
         return when (buildType) {
             ".qa" -> {
-                ConstantsUtil.RequestConstants.ATHM_AWS_QA_URL
+                RequestConstants.ATHM_AWS_QA_URL
             }
             ".qacert" -> {
-                ConstantsUtil.RequestConstants.ATHM_AWS_CERT_URL
+                RequestConstants.ATHM_AWS_CERT_URL
             }
             else -> {
-                ConstantsUtil.RequestConstants.ATHM_AWS_PROD_URL
+                RequestConstants.ATHM_AWS_PROD_URL
             }
         }
     }

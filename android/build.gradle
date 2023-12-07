@@ -2,14 +2,14 @@ group 'com.evertec.athmovil.athmovil_checkout_flutter'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.5.20'
+    ext.kotlin_version = '1.8.21'
     repositories {
         google()
         jcenter()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath 'com.android.tools.build:gradle:7.3.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -25,7 +25,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 33
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -40,14 +40,14 @@ android {
         sourceCompatibility "1.8"
         targetCompatibility "1.8"
     }
-    buildToolsVersion '30.0.2'
-    ndkVersion '20.1.5948944'
+    buildToolsVersion '30.0.3'
+    ndkVersion '21.1.6352462'
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.annotation:annotation:1.2.0'
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
 }
