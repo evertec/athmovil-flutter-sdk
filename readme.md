@@ -74,11 +74,9 @@ dependencies {
 
 ### Manifest
 Configure the activity where the payment response will be sent to on your manifest.
-(**Note: If your app targets Android 11 (API Level 30) or higher, you must include the QUERY_ALL_PACKAGES permission❗️**)
 
 ```xml
-<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
-...
+
 <activity
     android:name=".Activity">
     <intent-filter>
