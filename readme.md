@@ -73,7 +73,17 @@ dependencies {
 ```
 
 ### Manifest
-Configure the activity where the payment response will be sent to on your manifest.
+Configure the activity where the payment response will be sent to on your manifest. In order to open the ATH Móvil app on Android 11 or higher, include the following querie object.
+```xml
+<queries>
+    <package android:name="com.evertec.athmovil.android" />
+    
+    <intent>
+        <action android:name="android.intent.action.SEND" />
+        <data android:mimeType="text/plain" />
+    </intent>
+</queries>
+```
 
 ```xml
 
