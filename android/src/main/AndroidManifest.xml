@@ -2,4 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.evertec.athmovil.athmovil_checkout_flutter">
     <uses-permission android:name="android.permission.INTERNET" />
+    <queries>
+        <package android:name="com.evertec.athmovil.android" />
+
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
 </manifest>
