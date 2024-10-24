@@ -33,7 +33,7 @@ class ATHMovilPaymentButton extends StatelessWidget {
         );
       },
       style: ElevatedButton.styleFrom(
-        primary: getBackgroundColorButton(),
+        backgroundColor: getBackgroundColorButton(),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
