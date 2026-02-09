@@ -122,6 +122,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             var paymentRequest = try JSONDecoder().decode(PaymentRequest.self, from: jsonData)
             paymentRequest.env = buildType
             paymentRequest.timeout = timeout
+
             let baseUrl = "https://" + baseUrlAWS
             let url = URL (string: baseUrl + ConstantsUtil.call.ATHM_API_PAYMENT)!
             var request = URLRequest(url: url, timeoutInterval: 15)
@@ -138,6 +139,12 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                     Self.channel?.invokeMethod(
                         ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
                     return
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.INIT_PAYMENT_FAILURE,
+                        paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
+                        buildType: self.buildType,
+                        paymentReference: ConstantsUtil.nr.FAILED_ERROR
+                    )
                 }
                 let responsePayment = try? JSONDecoder().decode(PaymentResponse.self, from: responseData)
                 guard let responsePayment = responsePayment else {
@@ -152,6 +159,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                     //SET PAYMENT SECURE REQUEST
                     let ecommerceId = responsePayment.data?.ecommerceId
                     let scheme = paymentRequest.callbackSchema
+                    let ecommerceStatus = responsePayment.status
                     let securePayment: Any  =
                     [
                         "ecommerceId": ecommerceId ?? "",
@@ -162,7 +170,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                         "timeout": timeout,
                         "expiresIn": timeout
                     ]
-                    
+
                     if let theJSONData = try?  JSONSerialization.data(
                       withJSONObject: securePayment,
                       options: .prettyPrinted
@@ -173,10 +181,25 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                         var urlComponents = URLComponents(string: self.urlSelection(dummy: false, secure: true))
                         urlComponents?.queryItems = [URLQueryItem(name: ConstantsUtil.request.ATHM_TRANSACTION_DATA, value:securePaymentString)]
                         self.openATH(urlComponents?.url ?? URL(fileURLWithPath: ConstantsUtil.request.ATHM_EMPTY_STRING), result: result)
+
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.INIT_PAYMENT_SUCCESS,
+                            paymentStatus: ecommerceStatus,
+                            buildType: self.buildType,
+                            paymentReference: ecommerceId
+                        )
                     }
                 }else{
                     Self.channel?.invokeMethod(
                         ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
+
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.INIT_PAYMENT_FAILURE,
+                        paymentStatus: responsePayment.status ?? "N/A",
+                        buildType: self.buildType,
+                        paymentReference: responsePayment.message ?? "N/A"
+                    )
+
                 }
             }.resume()
         
@@ -185,10 +208,12 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             Self.channel?.invokeMethod(
                 ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR
             )
+
         }
     }
     
-    private func _validateIntentResponse(jsonResponse:String, authToken:String){         let jsonResponseData = Data(jsonResponse.utf8)
+    private func _validateIntentResponse(jsonResponse:String, authToken:String){
+        let jsonResponseData = Data(jsonResponse.utf8)
         do{
             let athmMovilPaymentResponse = try JSONDecoder().decode(ATHMovilPaymentResponse.self, from: jsonResponseData)
             if(athmMovilPaymentResponse.status == ATHMStatus.completed){
@@ -196,6 +221,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             }else{
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: jsonResponse
+
                 )
             }
         }catch{
@@ -223,11 +249,24 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             urlSesion.dataTask(with: request) { (responseData, urlResponse, error) in
                 LoadingView.removeLoadign()
                 guard let responseData = responseData else {
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
+                        buildType: self.buildType,
+                        paymentReference: jsonResponse ?? "N/A"
+
+                    )
                     self.failedResult(jsonResponse:jsonResponse)
                     return
                 }
                 let responseAuthorization = try? JSONDecoder().decode(AuthorizationResponse.self, from: responseData)
                 guard let responseAuthorization = responseAuthorization else{
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                        buildType: self.buildType,
+                        paymentReference: jsonResponse ?? "N/A"
+                    )
                     self.failedResult(jsonResponse:jsonResponse)
                     return
                 }
@@ -238,6 +277,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                     PaymentResultFlag.shared.setPaymentRequest(paymentRequest: nil)
                     //SET PARAMS RESPONSE AUTHORIZATION
                     let dailyTransactionId = Int(responseAuthorization.data?.dailyTransactionId ?? "0") ?? 0
+                    let statusString = responseAuthorization.status?.rawValue
                     athmMovilPaymentResponse.dailyTransactionID = dailyTransactionId
                     athmMovilPaymentResponse.referenceNumber = responseAuthorization.data?.referenceNumber
                     athmMovilPaymentResponse.fee = responseAuthorization.data?.fee ?? 0.0
@@ -245,18 +285,38 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                     do {
                         let encodedData = try JSONEncoder().encode(athmMovilPaymentResponse)
                         let paymentResult = String(data: encodedData, encoding: .utf8)
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_SUCCESS,
+                            paymentStatus: statusString,
+                            buildType: self.buildType,
+                            paymentReference: responseAuthorization.data?.ecommerceId ?? ""
+                        )
                         Self.channel?.invokeMethod(
                             ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: paymentResult
+
                         )
                     } catch {
                         self.failedResult(jsonResponse:jsonResponse)
                     }
                 }else{
                     self.failedResult(jsonResponse:jsonResponse)
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                        buildType: self.buildType,
+                        paymentReference: jsonResponse ?? "N/A"
+
+                    )
                 }
             }.resume()
         }catch{
             LoadingView.removeLoadign()
+            NewRelicConfig.sendEventToNewRelic(
+                eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                buildType: self.buildType,
+                paymentReference: jsonResponse ?? "N/A"
+            )
             self.failedResult(jsonResponse:jsonResponse)
         }
     }
@@ -272,27 +332,26 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             Self.channel?.invokeMethod(
                 ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: paymentResult
             )
+            NewRelicConfig.sendEventToNewRelic(
+                eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                paymentStatus: athmMovilPaymentResponse.status?.rawValue ?? "N/A",
+                buildType: self.buildType,
+                paymentReference: paymentResult ?? "N/A"
+            )
         }catch{
             Self.channel?.invokeMethod(
                 ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_FAILED_RESULT)
+            NewRelicConfig.sendEventToNewRelic(
+                eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                buildType: self.buildType,
+                paymentReference: String(data: jsonResponseData, encoding: .utf8) ?? "N/A"            )
         }
     }
     
     public func urlSelection(dummy: Bool, secure: Bool = false) -> String {
         switch (buildType, dummy, secure)
         {
-            case (ConstantsUtil.request.ATHM_BUILD_QA, true, false):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE_DUMMY
-            case (ConstantsUtil.request.ATHM_BUILD_QA, false, false):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE
-            case (ConstantsUtil.request.ATHM_BUILD_QA, false, true):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE_SECURE
-            case (ConstantsUtil.request.ATHM_BUILD_QA_CERT, true, false):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE_DUMMY
-            case (ConstantsUtil.request.ATHM_BUILD_QA_CERT, false, false):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE
-            case (ConstantsUtil.request.ATHM_BUILD_QA_CERT, false, true):
-                return ConstantsUtil.call.ATHM_TEST_URL + ConstantsUtil.call.ATHM_MOBILE_SECURE
             case (_, true, false):
                 return ConstantsUtil.call.ATHM_PROD_URL + ConstantsUtil.call.ATHM_MOBILE_DUMMY
             default:
@@ -317,6 +376,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
         else if((athmPayment?.publicToken.elementsEqual(ConstantsUtil.request.ATHM_DUMMY)) == true){
             Self.channel?.invokeMethod(
                 ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_CANCELLED_RESULT
+
             )
         }else{// else its the verifyPaymentStatus services
             verifyPaymentStatus(athmPayment:athmPayment)
@@ -336,12 +396,26 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
         //TODO: URLSession.shared
         urlSesion.dataTask(with: request) { (responseData, urlResponse, error) in
             guard let responseData = responseData else {
+                NewRelicConfig.sendEventToNewRelic(
+                    eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                    paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
+                    buildType: self.buildType,
+                    paymentReference: ConstantsUtil.request.ATHM_FAILED_RESULT
+                )
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
                 return
             }
             let responseError = try? JSONDecoder().decode(ResponseError.self, from: responseData)
             if responseError != nil && responseError?.errorCode != nil {
+                let errorString = String(data: responseData, encoding: .utf8) ?? "N/A"
+
+                NewRelicConfig.sendEventToNewRelic(
+                    eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                    paymentStatus: ConstantsUtil.request.ATHM_FAILED_RESULT,
+                    buildType: self.buildType,
+                    paymentReference: errorString
+                )
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_CANCELLED_RESULT)
                 return
@@ -355,23 +429,12 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     private func getURL() -> String {
         if buildType == ".piloto"{
             return "https://piloto.athmovil.com"
-        }else if buildType == ".qa"{
-            return "https://192.168.234.77:8090"
-        }else if buildType == ".qacert"{
-            return "https://192.168.234.77:8090"
         }
         return "https://www.athmovil.com"
     }
 
     private var baseUrlAWS: String {
-        switch buildType {
-            case ".qa":
-                return  "ozm9fx7yw5-vpce-0c7145d0436fe328e.execute-api.us-east-1.amazonaws.com"
-            case ".qacert":
-                return  "certpayments.athmovil.com"
-            default:
-                return  "payments.athmovil.com"
-        }
+            return  "payments.athmovil.com"
     }
     
     struct ConsultTransaction: Encodable {

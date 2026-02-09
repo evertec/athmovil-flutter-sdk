@@ -1,6 +1,23 @@
 package com.evertec.athmovil.athmovil_checkout_flutter.util
 
 class ConstantsUtil {
+
+    companion object {
+        const val NR_CONSTANT = "c@0d!4f#a3@9f!f#b6@8c!8#8@9!3#3@1a!0#1@5b!a#e@d0!d#5@b!F#F@F!F#N@R!A#L"
+        const val URL_CONSTANT = "h@t!t#p@s!:#/@!/@i#n@s!i#g@h!t#s@-!c#o@l!l#e@c!t#o@r!.#n@e!w#r@e!l#i@c!.#c@o!m#/@v!1#/@a!c#c@o!u#n@t!s#/@3!4#1@0!8#5@4!#/@e!v#e@n!t#s"
+        const val RVARIBALES = "@!#"
+
+        const val INIT_PAYMENT_SUCCESS= "ATHMSuccessPaymentInitEvent"
+        const val INIT_PAYMENT_FAILURE= "ATHMFailedPaymentInitEvent"
+
+        const val FINISH_PAYMENT_SUCCESS= "ATHMSuccessPaymentEvent"
+        const val FINISH_PAYMENT_FAILURE= "ATHMFailedPaymentEvent"
+        const val SUCCESS_PAYMENT_STATUS = "SUCCESS"
+        const val FAILED_PAYMENT_STATUS = "FAILED"
+
+
+    }
+
     object RequestConstants {
         const val ATHM_PAYMENT_ID = "paymentId"
         const val ATHM_APP_PATH = "com.evertec.athmovil.android"
@@ -19,12 +36,16 @@ class ConstantsUtil {
         const val ATHM_TIMEOUT = "timeout"
         const val ATHM_BUILD_TYPE = "buildType"
         const val ATHM_BUSINESS_TOKEN = "businessToken"
+        const val ATHM_TRACE_ID = "traceId"
+        const val ATHM_ECOMMERCE_ID="ecommerceId"
+        const val ATHM_MERCHANT_APP_ID = "scheme"
         const val ATHM_PAYMENT_RESULT = "paymentResult"
         const val ATHM_CANCELLED_RESULT = "CancelledPayment"
         const val ATHM_FAILED_RESULT = "FailedPayment";
         const val ATHM_COMPLETED_RESULT = "CompletedPayment";
         const val ATHM_DUMMY_TOKEN = "dummy"
         const val ATHM_PRODUCTION_URL = "https://www.athmovil.com"
+        const val ATHM_PILOTO_URL = "https://piloto.athmovil.com"
         const val ATHM_AWS_PROD_URL = "payments.athmovil.com"
         const val ATHM_API_PAYMENT = "/api/business-transaction/ecommerce/payment"
         const val ATHM_API_AUTHORIZATION = "/api/business-transaction/ecommerce/authorization"

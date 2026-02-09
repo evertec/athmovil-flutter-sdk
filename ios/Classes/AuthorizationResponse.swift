@@ -19,6 +19,7 @@ struct PaymentData: Codable {
     let referenceNumber: String?
     let fee: Double?
     let netAmount: Double?
+    let ecommerceId: String?
 }
 
 enum ATHMStatus: String, Codable {

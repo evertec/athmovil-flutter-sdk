@@ -4,40 +4,15 @@
 ## Introduction
 ATH Móvil's Payment Secure Button SDK provides a simple, secure and fast checkout experience to customers paying on your Flutter application. After integrating our Payment Secure Button on your app you will be able to receive real time payments from more than 1.5 million ATH Móvil users.
 
-Disclaimer: The Payment Button ATH Móvil is not compatible with any major Ecommerce platform. This includes Shopify, Wix, Woocommerce or Stripe.
-
-Disclaimer: We currently **do not** have a **Testing environment**. You need to have an active ATH Business account and a active ATH Móvil account.
 
 ## Prerequisites
-Before using the ATH Móvil’s payment you need to have:
-
-### ATH Business
-
-1\. An active ATH Business account.
-
-2\. A card registered in your ATH Business profile. 
-
-3\. The public and private key assigned to your business.
-
-For instructions on how to open a ATH Business account please refer to: [ATHB flyer eng letter 1.pdf](https://github.com/user-attachments/files/16267504/ATHB.flyer.eng.letter.1.pdf)
-
-For more information related to ATH Business and how it works please refer to:[ATH BUSINESS_Apr2024.pptx](https://github.com/user-attachments/files/16267585/ATH.BUSINESS_Apr2024.pptx)
-
-### ATH Móvil
-
-To complete the payment for testing purposes you need to have:
-
-1\. An active ATH Móvil account.
-
-2\. A card registered in your ATH Móvil profile. It can not be the same card that is registered in ATH Business.
-
-For more information related to ATH Móvil and how it works please refer to:[ATH Móvil_Apr2024.pptx](https://github.com/user-attachments/files/16267592/ATH.Movil_Apr2024.pptx)
+Before you begin, please review the following prerequisites:
+1. An active ATH Móvil Business account is required to continue. To sign up, download "ATH Móvil Business" on the App Store or Play Store of your iOS or Android device.
+2. Your ATH Móvil Business account needs to have a registered, verified and active ATH® card.
+3. Have the public and private API keys of your Business account at hand. **You can view your API keys on the settings section of ATH Móvil Business for iOS or Android.**
 
 
 If you need help signing up, adding a card or have any other question please refer to https://athmovilbusiness.com/preguntas or contact our support team at (787) 773-5466. For technical support please complete the following form:  https://forms.gle/ZSeL8DtxVNP2K2iDA.
-
-## Support
-If you need help signing up, adding a card or have any other question please refer to https://ath.business.com/preguntas. For technical support please complete the following form:  https://ath.business/botondepago.
 
 ## Installation
 Before we get started, let’s configure your project:
@@ -46,7 +21,7 @@ Before we get started, let’s configure your project:
 Add the Payment Secure Button SDK dependency to your project.
 ```yaml
 dependencies:
-  athmsdk: 5.0.0
+  athmsdk: 1.0.0
 ```
 
 ### Dependencies
@@ -54,11 +29,8 @@ The Payment Secure Button SDK uses these dependencies.
 ```yaml
 dependencies:
   async: ^2.6.1
-  uuid: ^4.0.0
-  intl: ^0.19.0
-  flutter:
-    sdk: flutter
-  provider: ^6.1.1
+  uuid: 3.0.4
+  intl: ^0.18.1
 ```
 
 ## Android Installation
@@ -68,29 +40,20 @@ Before we get started, let’s configure your Android project:
 Add the Payment Secure Button SDK dependencies to your project.
 ```java
 dependencies {
-    implementation 'androidx.annotation:annotation:1.7.0'
-    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
 }
 ```
 
 ### Manifest
-Configure the activity where the payment response will be sent to on your manifest. In order to open the ATH Móvil app on Android 11 or higher, include the following querie object.
-```xml
- <queries>
-    <package android:name="com.evertec.athmovil.android" />
-    
-    <intent>
-        <action android:name="android.intent.action.SEND" />
-        <data android:mimeType="text/plain" />
-    </intent>
-</queries>
-```
+Configure the activity where the payment response will be sent to on your manifest.
+(**Note: If your app targets Android 11 (API Level 30) or higher, you must include the QUERY_ALL_PACKAGES permission❗️**)
 
 ```xml
-
+<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+...
 <activity
     android:name=".Activity">
     <intent-filter>
@@ -160,10 +123,10 @@ ATHMovilPaymentSecureButton(style: Style.orange,
 #### Configure the payment.
 Add all required imports to the dart file of your checkout screen.
 ```dart
-import 'package:athmovil_checkout_flutter/interfaces/athmovil_payment_response_listener.dart';
-import 'package:athmovil_checkout_flutter/model/athmovil_payment.dart';
-import 'package:athmovil_checkout_flutter/model/athmovil_payment_response.dart';
-import 'package:athmovil_checkout_flutter/widget/athmovil_payment_secure_button.dart';
+import 'athmovil_checkout_flutter/interfaces/athmovil_payment_response_listener.dart';
+import 'athmovil_checkout_flutter/model/athmovil_payment.dart';
+import 'athmovil_checkout_flutter/model/athmovil_payment_response.dart';
+import 'athmovil_checkout_flutter/widget/athmovil_payment_secure_button.dart';
 ```
 
 Create an `ATHMovilPayment` object on the main class of the file.
@@ -184,29 +147,29 @@ ATHMovilPayment(
 
 | Method  | Data Type | Required | Description |
 | ------------- |:-------------:|:-----:| ------------- |
-| `businessToken`   | String | Yes | Determines the Business account where the payment will be sent to. |
-| `callbackSchema`  | String | Yes | Android schema configuration name of manifest / iOS URL Schema. |
-| `timeout`         | Int    | No  | Expires the payment process if the payment hasn't been completed by the user after the provided amount of time (in seconds). Countdown starts immediately after the user presses the Payment Secure Button. Default value is set to 600 seconds (10 mins). |
-| `total`           | Double | Yes | Total amount to be paid by the end user. |
-| `subtotal`        | Double | No  | Optional  variable to display the payment subtotal (if applicable) |
-| `tax`             | Double | No  | Optional variable to display the payment tax (if applicable). |
-| `metadata1`       | String | No  | Optional variable to attach data to the payment object. |
-| `metadata2`       | String | No  | Optional variable to attach data to the payment object. |
-| `items`           | Array  | No  | Optional variable to display the items that the user is purchasing on ATH Móvil's payment screen. Items on the array are expected in the following order: (“name”, “desc”, "quantity", “price”, “metadata”) |
-| `phoneNumber`     | String | No  | Identify the customer's phone number. Should always be configured as an empty string. |
+| `phoneNumber` | String | Phone number of customer. |
+| `businessToken` | String | Yes | Determines the Business account where the payment will be sent to. |
+| `callbackSchema` | String | Yes | Android schema configuration name of manifest / iOS URL Schema. |
+| `timeout` | Int | No | Expires the payment process if the payment hasn't been completed by the user after the provided amount of time (in seconds). Countdown starts immediately after the user presses the Payment Secure Button. Default value is set to 600 seconds (10 mins). |
+| `total` | Double | Yes | Total amount to be paid by the end user. |
+| `subtotal` | Double | No | Optional  variable to display the payment subtotal (if applicable) |
+| `tax` | Double | No | Optional variable to display the payment tax (if applicable). |
+| `metadata1` | String | No | Optional variable to attach data to the payment object. |
+| `metadata2` | String | No | Optional variable to attach data to the payment object. |
+| `items` | Array | No | Optional variable to display the items that the user is purchasing on ATH Móvil's payment screen. Items on the array are expected in the following order: (“name”, “desc”, "quantity", “price”, “metadata”) |
 
 In the request make sure you comply with the following requirements for `ATHMovilPayment` object, otherwise you will receive an exception on the callback:
 
 | Variable  | Expeted Value |
 | ------------- |:-------------:|
-| `total`       | Positive value |
-| `subtotal`    | Positive value or zero |
-| `tax`         | Positive value or zero |
-| `metadata1`   | Spaces, letters and numbers, max length 40|
-| `metadata2`   | Spaces, letters and numbers, max length 40|
+| `total` | Positive value |
+| `subtotal` | Positive value or zero |
+| `tax` | Positive value or zero |
+| `metadata1` | Spaces, letters and numbers, max length 40|
+| `metadata2` | Spaces, letters and numbers, max length 40|
 | `publicToken` | String |
-| `timeout`     | Integer between 60 and 600 |
-| `phoneNumber` | String |
+| `timeout` | Integer between 60 and 600 |
+| `phoneNumber` | String | Phone number of customer. |
 
 If you provide items in the request make sure you comply with these requirements for the `ATHMovilItem` object:
 
