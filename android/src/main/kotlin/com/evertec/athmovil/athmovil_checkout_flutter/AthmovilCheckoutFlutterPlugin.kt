@@ -69,6 +69,8 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
 
     private lateinit var merchantId: String
 
+    private lateinit var appName: String
+
 
     /**
      * Default constructor for AthmovilCheckoutFlutterPlugin.
@@ -164,35 +166,60 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
     ///
     private fun validateIntentResponse(@NonNull intent: Intent) {
         val paymentResult: String? = intent.getStringExtra(RequestConstants.ATHM_PAYMENT_RESULT)
-        if (paymentResult == null) {            
+        if (paymentResult == null) {
             validateCurrentPaymentInMemory()
         } else {
-            try{
+            try {
                 val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
-                if(paymentReturn.status == RequestConstants.ATHM_COMPLETED_RESULT){
-                    //GET AUTHTOKEN
-                    val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
-                    val authToken = sharedPref?.getString("flutter.authToken","") ?: ""
-                    if(authToken.isEmpty()){
+
+                Log.d("ATHM_PAYMENT", "Payment Result: $paymentResult")
+                when (paymentReturn.status) {
+                    RequestConstants.ATHM_COMPLETED_RESULT -> {
+                        val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+                        val authToken = sharedPref?.getString("flutter.authToken", "") ?: ""
+                        if (authToken.isEmpty()) {
+                            PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                        } else {
+                            authorizationPayment(paymentResult)
+                        }
+                    }
+
+                    RequestConstants.ATHM_CANCELLED_RESULT -> {
+                        NewRelicConfig.sendEventToNewRelic(
+                            ConstantsUtil.FINISH_PAYMENT_FAILURE,
+                            "N/A",
+                            appName?:"N/A",
+                            ConstantsUtil.CANCELLED_PAYMENT_STATUS,
+                            buildType
+                        )
                         PaymentResultFlag.getApplicationInstance().paymentRequest = null
                         channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
-                    }else{
-                        authorizationPayment(paymentResult)
                     }
-                }else{
-                    PaymentResultFlag.getApplicationInstance().paymentRequest = null
-                    channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                    RequestConstants.ATHM_EXPIRED_RESULT -> {
+                        NewRelicConfig.sendEventToNewRelic(
+                            ConstantsUtil.FINISH_PAYMENT_FAILURE,
+                            "N/A,
+                            appName?:"N/A",
+                            ConstantsUtil.EXPIRED_PAYMENT_STATUS,
+                            buildType
+                        )
+                        PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                        channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                    }
+                    else -> {
+                        PaymentResultFlag.getApplicationInstance().paymentRequest = null
+                        channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResult)
+                    }
                 }
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 channel.invokeMethod(
                     ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
                     ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
                 )
             }
-
         }
     }
-
     /**
      * Call ATH Móvil service to authorizate payment transaction.
      * @param paymentResult - paymentResult athm movil **/
@@ -235,7 +262,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                         paymentReturn.netAmount = netAmount
                         PaymentResultFlag.getApplicationInstance().paymentRequest = null
                         val paymentResultString: String = Gson().toJson(paymentReturn)
-                        val merchantIdResponse =  merchantId?:"N/A"
+                        val merchantIdResponse =  appName?:"N/A"
 
                        NewRelicConfig.sendEventToNewRelic(
                            ConstantsUtil.FINISH_PAYMENT_SUCCESS,
@@ -257,33 +284,33 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                 }
             })
         }catch (e: Exception){
-
             failedResult(paymentResult)
         }
     }
 
     private fun failedResult(paymentResult: String){
         hideLoading()
+
         try {
             val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
             paymentReturn.status = RequestConstants.ATHM_FAILED_RESULT
             PaymentResultFlag.getApplicationInstance().paymentRequest = null
             val paymentResultString: String = Gson().toJson(paymentReturn)
+            val merchantIdResponse =  appName?:"N/A"
             NewRelicConfig.sendEventToNewRelic(
                ConstantsUtil.FINISH_PAYMENT_FAILURE,
                 paymentResultString,
-                "N/A",
+                merchantIdResponse,
                 ConstantsUtil.FAILED_PAYMENT_STATUS,
                 buildType
-
             )
             channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
         }catch (e: Exception){
-
+            val merchantIdResponse =  appName?:"N/A"
            NewRelicConfig.sendEventToNewRelic(
                ConstantsUtil.FINISH_PAYMENT_FAILURE,
                "Exception: ${e.message}",
-               "N/A",
+               merchantIdResponse,
                ConstantsUtil.FAILED_PAYMENT_STATUS,
                ""
            )
@@ -337,7 +364,6 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
 
     private fun verifyPaymentStatus(athmPayment: ATHMPayment?) {
 
-        val url = when (buildType) {       
             ".piloto" -> {
                 RequestConstants.ATHM_PILOTO_URL
             }
@@ -384,6 +410,16 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                 )
             }
         })
+    }
+
+    private fun getIntegratingAppName(): String {
+        return try {
+            val packageManager = context.packageManager
+            val applicationInfo = packageManager.getApplicationInfo(context.packageName, 0)
+            packageManager.getApplicationLabel(applicationInfo).toString()
+        } catch (e: Exception) {
+            "N/A"
+        }
     }
 
      /**
@@ -439,11 +475,11 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                              buildType = buildType
                          )
                          merchantId = paymentArgumentsJson.getString(RequestConstants.ATHM_MERCHANT_APP_ID)
-
+                         appName = getIntegratingAppName()
                          NewRelicConfig.sendEventToNewRelic(
                              ConstantsUtil.INIT_PAYMENT_SUCCESS,
                              paymentArgumentsJson.getString(RequestConstants.ATHM_TRACE_ID),
-                             merchantId,
+                             appName,
                              ConstantsUtil.SUCCESS_PAYMENT_STATUS,
                              buildType
                          )
@@ -456,7 +492,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                      }
                  } else {
                      val responseError = response?:"N/A"
-                     val merchantIdResponse =  merchantId?:"N/A"
+                     val merchantIdResponse =  appName?:"N/A"
                      NewRelicConfig.sendEventToNewRelic(
                          ConstantsUtil.INIT_PAYMENT_FAILURE,
                          "Exception: ${responseError}",
@@ -473,7 +509,6 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
              @Override
              override fun onFailure(call: Call<PaymentResponse?>, t: Throwable) {
                  hideLoading()
-
                  channel.invokeMethod(
                      ConstantsUtil.ErrorConstants.ATHM_EXCEPTION,
                      ConstantsUtil.ErrorConstants.ATHM_RESPONSE_EXCEPTION
@@ -568,9 +603,6 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         channel.setMethodCallHandler(null)
     }
 
- private fun baseUrlAWS(): String {
-    return RequestConstants.ATHM_AWS_PROD_URL
-}
 
     private fun showLoading() {
         runBlocking {

@@ -29,7 +29,7 @@ object NewRelicConfig {
             "build_type" to finalBuildType,
             "sdk_platform" to "Android_Flutter",
             "timestamp" to System.currentTimeMillis(),
-            "sdk_version" to "4.1.0",
+            "sdk_version" to "6.0.1",
             "device_os_version" to android.os.Build.VERSION.RELEASE,
             "device_os_model" to android.os.Build.MODEL
         )

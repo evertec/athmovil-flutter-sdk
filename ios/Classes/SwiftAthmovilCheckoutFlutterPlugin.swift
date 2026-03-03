@@ -219,9 +219,23 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             if(athmMovilPaymentResponse.status == ATHMStatus.completed){
                 _authorizationPayment(jsonResponse:jsonResponse, authToken:authToken)
             }else{
+                if athmMovilPaymentResponse.status == ATHMStatus.cancelled {
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ATHMStatus.cancelled.rawValue,
+                        buildType: self.buildType,
+                        paymentReference: jsonResponse
+                    )
+                } else if athmMovilPaymentResponse.status == ATHMStatus.expired {
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ATHMStatus.expired.rawValue,
+                        buildType: self.buildType,
+                        paymentReference: jsonResponse
+                    )
+                }
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: jsonResponse
-
                 )
             }
         }catch{
@@ -434,7 +448,6 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private var baseUrlAWS: String {
-            return  "payments.athmovil.com"
     }
     
     struct ConsultTransaction: Encodable {

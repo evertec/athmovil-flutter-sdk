@@ -14,6 +14,10 @@ class ConstantsUtil {
         const val FINISH_PAYMENT_FAILURE= "ATHMFailedPaymentEvent"
         const val SUCCESS_PAYMENT_STATUS = "SUCCESS"
         const val FAILED_PAYMENT_STATUS = "FAILED"
+        const val EXPIRED_PAYMENT_STATUS = "EXPIRED"
+        const val CANCELLED_PAYMENT_STATUS = "CANCELLED"
+
+
 
 
     }
@@ -40,6 +44,7 @@ class ConstantsUtil {
         const val ATHM_ECOMMERCE_ID="ecommerceId"
         const val ATHM_MERCHANT_APP_ID = "scheme"
         const val ATHM_PAYMENT_RESULT = "paymentResult"
+        const val ATHM_EXPIRED_RESULT = "ExpiredPayment"
         const val ATHM_CANCELLED_RESULT = "CancelledPayment"
         const val ATHM_FAILED_RESULT = "FailedPayment";
         const val ATHM_COMPLETED_RESULT = "CompletedPayment";
