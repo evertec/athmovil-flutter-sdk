@@ -448,6 +448,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private var baseUrlAWS: String {
+     return  "payments.athmovil.com"
     }
     
     struct ConsultTransaction: Encodable {
