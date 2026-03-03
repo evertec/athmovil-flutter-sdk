@@ -171,8 +171,6 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         } else {
             try {
                 val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
-
-                Log.d("ATHM_PAYMENT", "Payment Result: $paymentResult")
                 when (paymentReturn.status) {
                     RequestConstants.ATHM_COMPLETED_RESULT -> {
                         val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
@@ -363,7 +361,7 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
      * @param context - Application context **/
 
     private fun verifyPaymentStatus(athmPayment: ATHMPayment?) {
-
+           val url = when (buildType) {  
             ".piloto" -> {
                 RequestConstants.ATHM_PILOTO_URL
             }
@@ -573,6 +571,10 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         } catch (e: Exception) {
             OkHttpClient.Builder().build()
         }
+    }
+
+    private fun baseUrlAWS(): String {
+        return RequestConstants.ATHM_AWS_PROD_URL
     }
 
     override fun onDetachedFromActivity() {
