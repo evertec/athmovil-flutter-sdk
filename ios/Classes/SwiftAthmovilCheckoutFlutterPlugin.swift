@@ -214,6 +214,9 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     
     private func _validateIntentResponse(jsonResponse:String, authToken:String){
         let jsonResponseData = Data(jsonResponse.utf8)
+         if let jsonDict = try? JSONSerialization.jsonObject(with: jsonResponseData) as? [String: Any] {
+            ecommerceId = jsonDict["ecommerceId"] as? String ?? "N/A"
+        }
         do{
             let athmMovilPaymentResponse = try JSONDecoder().decode(ATHMovilPaymentResponse.self, from: jsonResponseData)
             if(athmMovilPaymentResponse.status == ATHMStatus.completed){
@@ -224,14 +227,14 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                         eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
                         paymentStatus: ATHMStatus.cancelled.rawValue,
                         buildType: self.buildType,
-                        paymentReference: jsonResponse
+                        paymentReference: ecommerceId
                     )
                 } else if athmMovilPaymentResponse.status == ATHMStatus.expired {
                     NewRelicConfig.sendEventToNewRelic(
                         eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
                         paymentStatus: ATHMStatus.expired.rawValue,
                         buildType: self.buildType,
-                        paymentReference: jsonResponse
+                        paymentReference: ecommerceId
                     )
                 }
                 Self.channel?.invokeMethod(
