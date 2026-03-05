@@ -20,7 +20,7 @@ class NewRelicConfig {
             "payment_status": paymentStatus ?? NSNull(),
             "timestamp": Int(Date().timeIntervalSince1970 * 1000),
             "merchant_app_id":Bundle.main.infoDictionary?["CFBundleName"],
-            "sdk_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
+            "sdk_version": "6.0.1",
             "device_os_version": UIDevice.current.systemVersion,
             "device_os_model": UIDevice.current.model
         ]

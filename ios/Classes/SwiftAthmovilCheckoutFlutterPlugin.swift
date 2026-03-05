@@ -214,14 +214,31 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     
     private func _validateIntentResponse(jsonResponse:String, authToken:String){
         let jsonResponseData = Data(jsonResponse.utf8)
+         if let jsonDict = try? JSONSerialization.jsonObject(with: jsonResponseData) as? [String: Any] {
+            ecommerceId = jsonDict["ecommerceId"] as? String ?? "N/A"
+        }
         do{
             let athmMovilPaymentResponse = try JSONDecoder().decode(ATHMovilPaymentResponse.self, from: jsonResponseData)
             if(athmMovilPaymentResponse.status == ATHMStatus.completed){
                 _authorizationPayment(jsonResponse:jsonResponse, authToken:authToken)
             }else{
+                if athmMovilPaymentResponse.status == ATHMStatus.cancelled {
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ATHMStatus.cancelled.rawValue,
+                        buildType: self.buildType,
+                        paymentReference: ecommerceId
+                    )
+                } else if athmMovilPaymentResponse.status == ATHMStatus.expired {
+                    NewRelicConfig.sendEventToNewRelic(
+                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                        paymentStatus: ATHMStatus.expired.rawValue,
+                        buildType: self.buildType,
+                        paymentReference: ecommerceId
+                    )
+                }
                 Self.channel?.invokeMethod(
                     ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: jsonResponse
-
                 )
             }
         }catch{
@@ -434,7 +451,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private var baseUrlAWS: String {
-            return  "payments.athmovil.com"
+     return  "payments.athmovil.com"
     }
     
     struct ConsultTransaction: Encodable {

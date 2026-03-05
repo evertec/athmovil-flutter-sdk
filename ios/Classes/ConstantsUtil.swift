@@ -1,4 +1,3 @@
-
 public struct ConstantsUtil {
 
     struct request {
@@ -44,8 +43,9 @@ public struct ConstantsUtil {
         static let INIT_PAYMENT_FAILURE = "ATHMFailedPaymentInitEvent"
         static let FINISH_PAYMENT_SUCCESS = "ATHMSuccessPaymentEvent"
         static let FINISH_PAYMENT_FAILURE = "ATHMFailedPaymentEvent"
+        static let FINISH_PAYMENT_CANCELLED = "ATHMCancelledPaymentEvent"
+        static let FINISH_PAYMENT_EXPIRED = "ATHMExpiredPaymentEvent"
         static let INIT_NETWORK_ERROR = "NETWORK_ERROR_INIT_PAYMENT"
         static let FAILED_ERROR = "FAILED"
     }
 }
-
