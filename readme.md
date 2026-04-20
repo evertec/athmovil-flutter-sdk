@@ -1,27 +1,40 @@
 # ATH Móvil Flutter SDK
 
+Flutter plugin for integrating the ATH Móvil Payment Secure Button into Android and iOS applications.
 
 ## Introduction
-ATH Móvil's Payment Secure Button SDK provides a simple, secure and fast checkout experience to customers paying on your Flutter application. After integrating our Payment Secure Button on your app you will be able to receive real time payments from more than 1.5 million ATH Móvil users.
 
+ATH Móvil's Payment Secure Button SDK provides a simple, secure, and fast checkout experience for customers paying in your Flutter application. After integrating the Payment Secure Button, you can receive real-time payments from ATH Móvil users directly in your app.
+
+## Features
+
+- ATH Móvil Checkout integration for Flutter
+- Android and iOS support
+- Secure payment button widget
+- Payment response callbacks
+- Simulated payment support using the public dummy token
+- Localization support
 
 ## Prerequisites
-Before you begin, please review the following prerequisites:
-1. An active ATH Móvil Business account is required to continue. To sign up, download "ATH Móvil Business" on the App Store or Play Store of your iOS or Android device.
-2. Your ATH Móvil Business account needs to have a registered, verified and active ATH® card.
-3. Have the public and private API keys of your Business account at hand. **You can view your API keys on the settings section of ATH Móvil Business for iOS or Android.**
 
+Before you begin, make sure you have:
 
-If you need help signing up, adding a card or have any other question please refer to https://athmovilbusiness.com/preguntas or contact our support team at (787) 773-5466. For technical support please complete the following form:  https://forms.gle/ZSeL8DtxVNP2K2iDA.
+1. An active ATH Móvil Business account.
+2. A registered, verified, and active ATH® card in your Business account.
+3. Access to your Business account API keys. These can be found in the **Settings** section of the ATH Móvil Business app.
+
+For help signing up, adding a card, or other questions:
+
+- FAQs: [https://athmovilbusiness.com/preguntas](https://athmovilbusiness.com/preguntas)
+- Technical support form: [https://forms.gle/ZSeL8DtxVNP2K2iDA](https://forms.gle/ZSeL8DtxVNP2K2iDA)
 
 ## Installation
-Before we get started, let’s configure your project:
 
-### Payment Secure Button SDK dependency
-Add the Payment Secure Button SDK dependency to your project.
+Add the dependency to your `pubspec.yaml`:
+
 ```yaml
 dependencies:
-  athmsdk: 1.0.0
+  athmovil_checkout_flutter: ^6.0.0
 ```
 
 ### Dependencies
@@ -48,16 +61,15 @@ dependencies {
 ```
 
 ### Manifest
-Configure the activity where the payment response will be sent to on your manifest.
+Configure the activity in your AndroidManifest.xml to receive the payment response.
 (**Note: If your app targets Android 11 (API Level 30) or higher, you must include the QUERY_ALL_PACKAGES permission❗️**)
 
 ```xml
 <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 ...
 <activity
-    android:name=".Activity">
+    android:name=".MainActivity">
     <intent-filter>
-        <!--Schema with app bundle Configuration-->
         <action android:name="appbundle.schema" />
         <category android:name="android.intent.category.DEFAULT" />
     </intent-filter>
@@ -77,32 +89,40 @@ Run the pod install command to add the Payment SecureButton SDK dependencies to 
 Add the URL configuration to the .plist file.
 ```xml
 <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>*App bundle*</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>*App callback schema*</string>
-            </array>
-        </dict>
-    </array>
+<array>
+    <dict>
+        <key>CFBundleTypeRole</key>
+        <string>Editor</string>
+        <key>CFBundleURLName</key>
+        <string>YourAppBundle</string>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>YourCallbackSchema</string>
+        </array>
+    </dict>
+</array>
+```
+
+### Import the package:
+```dart
+import 'package:athmovil_checkout_flutter/athmovil_checkout_flutter.dart';
 ```
 
 ## Usage
-To integrate ATH Móvil’s Payment Secure Button to your Flutter application follow these steps:
+To integrate ATH Móvil’s Payment Secure Button into your Flutter application, follow these steps:
+
 
 ### Widget
 Add the “Pay with ATH Móvil” button as a widget.
 ```dart
 // ATHMovilPaymentSecureButton property enum Style { orange, light, dark }
 // ATHMovilPaymentSecureButton property enum Lang { en, es }
-ATHMovilPaymentSecureButton(style: Style.orange,
-                      lang: Lang.en,
-                      athMovilPayment: ATHMovilPayment(), //ATHMovilPayment
-                      listener: this,) //ATHMovilPaymentResponseListener
+ATHMovilPaymentSecureButton(
+  buildType: ".qacert",
+  athMovilPayment: ...,
+  listener: this,
+  style: Style.dark,
+)
 ```
 * `Style { orange, light, dark }` defines the theme of the button.
 
@@ -121,33 +141,53 @@ ATHMovilPaymentSecureButton(style: Style.orange,
 
 ### Flutter
 #### Configure the payment.
-Add all required imports to the dart file of your checkout screen.
+Add required import to the dart file of your checkout screen.
 ```dart
-import 'athmovil_checkout_flutter/interfaces/athmovil_payment_response_listener.dart';
-import 'athmovil_checkout_flutter/model/athmovil_payment.dart';
-import 'athmovil_checkout_flutter/model/athmovil_payment_response.dart';
-import 'athmovil_checkout_flutter/widget/athmovil_payment_secure_button.dart';
+import 'package:athmovil_checkout_flutter/athmovil_checkout_flutter.dart';
 ```
 
 Create an `ATHMovilPayment` object on the main class of the file.
 ```dart
-ATHMovilPayment(
-      businessToken: , //String
-      callbackSchema: , //String 
-      total: , //double
-      subtotal: , //double
-      tax: , //double
-      timeout: , //int seconds
-      metadata1: , //String
-      metadata2: , //String
-      items: , //ATHMovilItem
-      phoneNumber: , //String
-    );
+final payment = ATHMovilPayment(
+  businessToken: 'dummy',
+  callbackSchema: 'ATHMSDK',
+  total: 29.14,
+  subtotal: 26.99,
+  tax: 2.15,
+  timeout: ConstantsUtil.ATHM_MIN_TIMEOUT,
+  items: [
+    ATHMovilItem(
+      name: 'Shirt',
+      description: 'Red t-shirt',
+      price: 10.99,
+      quantity: 1,
+      metadata: 'shirt-001',
+    ),
+    ATHMovilItem(
+      name: 'Shoes',
+      description: 'Running shoes',
+      price: 16.00,
+      quantity: 1,
+      metadata: 'shoes-001',
+    ),
+  ],
+  phoneNumber: '',
+);
+```
+
+Use the secure payment button in your widget tree:
+```dart
+ATHMovilPaymentSecureButton(
+  buildType: ".qacert",
+  athMovilPayment: payment,
+  listener: this,
+  style: Style.dark,
+)
 ```
 
 | Method  | Data Type | Required | Description |
 | ------------- |:-------------:|:-----:| ------------- |
-| `phoneNumber` | String | Phone number of customer. |
+| `phoneNumber` | String | No |  Phone number of customer. |
 | `businessToken` | String | Yes | Determines the Business account where the payment will be sent to. |
 | `callbackSchema` | String | Yes | Android schema configuration name of manifest / iOS URL Schema. |
 | `timeout` | Int | No | Expires the payment process if the payment hasn't been completed by the user after the provided amount of time (in seconds). Countdown starts immediately after the user presses the Payment Secure Button. Default value is set to 600 seconds (10 mins). |
@@ -160,7 +200,7 @@ ATHMovilPayment(
 
 In the request make sure you comply with the following requirements for `ATHMovilPayment` object, otherwise you will receive an exception on the callback:
 
-| Variable  | Expeted Value |
+| Variable  | Expected Value |
 | ------------- |:-------------:|
 | `total` | Positive value |
 | `subtotal` | Positive value or zero |
@@ -195,7 +235,8 @@ Note the request and items are the same objects in the response `ATHMovilPayment
 | `netAmount` | Double | Total amount paid by the end user without the fee. |
 | `status` | String | CANCELLED, COMPLETED or EXPIRED. |
 
-If there is unexpected data in the request or response the SDK will call the closure `onPaymentException` and you will get a title and a message with information of the error. Your application must manage these error cases. For example:
+
+If there is unexpected data in the request or response the SDK will invoke `onPaymentException` and you will get a title and a message with information of the error. Your application must manage these error cases. For example:
 
 ```dart
 @override
@@ -206,7 +247,7 @@ If there is unexpected data in the request or response the SDK will call the clo
 #### Validate the status of Pending Payments.
 In some error cases payment responses may not be sent back to your application, for example when end users close the ATH Móvil application from the multitasking view of their device in the middle of the payment process.
 
-To mitigate these cases the button has a method verifies the status of the transaction if the payment process was interrupted. The method can take a maximum of 30 seconds to respond, so consider managing this wait time from a user experience perspective.
+To mitigate these cases, the button provides a method that verifies the status of the transaction if the payment process was interrupted.
 
 #### Handle all payment responses.
 When a transaction is completed, canceled or expired a response is sent back to the URL scheme that was configured on the payment. Implement the `ATHMovilPaymentResponseListener` on the activity of the configured scheme.
@@ -272,4 +313,4 @@ ATHMovilPayment(
 ![paymentux](paymentux.png)
 
 ## Legal
-The use of this API and any related documentation is governed by and must be used in accordance with the Terms and Conditions of Use of ATH Móvi Business ®, which may be found at: https://athmovilbusiness.com/terminos.
+The use of this API and any related documentation is governed by and must be used in accordance with the Terms and Conditions of Use of ATH Móvil Business ®, which may be found at: https://athmovilbusiness.com/terminos.

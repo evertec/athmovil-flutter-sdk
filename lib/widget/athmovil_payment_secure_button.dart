@@ -3,8 +3,6 @@ import 'package:athmovil_checkout_flutter/model/athmovil_payment.dart';
 import 'package:athmovil_checkout_flutter/open_athmovil.dart';
 import 'package:athmovil_checkout_flutter/util/constants_util.dart';
 import 'package:flutter/material.dart';
-import 'package:athmovil_checkout_flutter/model/payment_view_model.dart';
-import 'package:provider/provider.dart';
 
 class ATHMovilPaymentSecureButton extends StatelessWidget {
   final Style? style;

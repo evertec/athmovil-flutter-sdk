@@ -1,6 +1,6 @@
-# athmovil_checkout_flutter_example
+# athmovil_checkout_dummy
 
-Demonstrates how to use the athmovil_checkout_flutter plugin.
+A new Flutter application.
 
 ## Getting Started
 

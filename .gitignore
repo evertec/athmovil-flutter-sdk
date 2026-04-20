@@ -1,134 +1,166 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# =========================
+# Flutter / Dart
+# =========================
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
-.pub-cache/
 .pub/
-/build/
-
-# Web related
-lib/generated_plugin_registrant.dart
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Miscellaneous
-*.lock
-
-# Visual Studio Code related
-.classpath
-.project
-.settings/
-.vscode/
-
-# Flutter repo-specific
-/bin/cache/
-/bin/internal/bootstrap.bat
-/bin/internal/bootstrap.sh
-/bin/mingit/
-/dev/benchmarks/mega_gallery/
-/dev/bots/.recipe_deps
-/dev/bots/android_tools/
-/dev/devicelab/ABresults*.json
-/dev/docs/doc/
-/dev/docs/flutter.docs.zip
-/dev/docs/lib/
-/dev/docs/pubspec.yaml
-/dev/integration_tests/**/xcuserdata
-/dev/integration_tests/**/Pods
-/packages/flutter/coverage/
-version
-analysis_benchmark.json
-
-# packages file containing multi-root paths
-.packages.generated
-
-# Flutter/Dart/Pub related
-**/generated_plugin_registrant.dart
+.pub-cache/
 build/
-flutter_*.png
-linked_*.ds
-unlinked.ds
-unlinked_spec.ds
-
-# Android related
-**/android/**/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-*.jks
-
-# iOS/XCode related
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/ephemeral
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
-
-# macOS
-**/macos/Flutter/GeneratedPluginRegistrant.swift
-
-# Coverage
 coverage/
 
-# Exceptions to above rules.
-!**/ios/**/default.mode1v3
-!**/ios/**/default.mode2v3
-!**/ios/**/default.pbxuser
-!**/ios/**/default.perspectivev3
-!/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
-!/dev/ci/**/Gemfile.lock
+# Generated files
+*.log
+*.tmp
+*.temp
+*.swp
+*.lock
+*.DS_Store
+
+# Dart generated
+*.dart.js
+*.info.json
+*.js.map
+*.symbols
+*.dill
+*.class
+
+# Flutter generated
+generated_plugin_registrant.dart
+
+# =========================
+# Android
+# =========================
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/captures/
+android/.cxx/
+android/**/.cxx/
+android/.idea/
+android/*.iml
+android/**/GeneratedPluginRegistrant.java
+
+example/android/.gradle/
+example/android/app/build/
+example/android/build/
+example/android/local.properties
+example/android/captures/
+example/android/.cxx/
+example/android/**/.cxx/
+example/android/.idea/
+example/android/*.iml
+example/android/**/GeneratedPluginRegistrant.java
+
+# Keystore / signing
+android/key.properties
+android/*.jks
+android/*.keystore
+android/app/*.jks
+android/app/*.keystore
+
+# =========================
+# iOS
+# =========================
+ios/Flutter/.last_build_id
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/.symlinks/
+ios/build/
+ios/Runner.xcworkspace/
+ios/xcuserdata/
+ios/*.mode1v3
+ios/*.mode2v3
+ios/*.moved-aside
+ios/*.pbxuser
+ios/*.perspectivev3
+ios/**/*.xcuserstate
+
+example/ios/Flutter/.last_build_id
+example/ios/Flutter/Flutter.framework
+example/ios/Flutter/Flutter.podspec
+example/ios/Flutter/Generated.xcconfig
+example/ios/Flutter/ephemeral/
+example/ios/Pods/
+example/ios/.symlinks/
+example/ios/build/
+example/ios/Runner.xcworkspace/
+example/ios/xcuserdata/
+example/ios/*.mode1v3
+example/ios/*.mode2v3
+example/ios/*.moved-aside
+example/ios/*.pbxuser
+example/ios/*.perspectivev3
+example/ios/**/*.xcuserstate
+
+# CocoaPods
+Podfile.lock
+
+# =========================
+# macOS
+# =========================
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/build/
+macos/.symlinks/
+macos/Runner.xcworkspace/
+macos/xcuserdata/
+
+# =========================
+# Linux
+# =========================
+linux/build/
+
+# =========================
+# Windows
+# =========================
+windows/build/
+
+# =========================
+# Web
+# =========================
+web/coverage/
+
+# =========================
+# IDEs / Editors
+# =========================
+.idea/
+.vscode/
+*.iml
+
+# VS Code (opcional: si quieres compartir launch/tasks/settings, quita estas 3 líneas)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+
+# =========================
+# Fastlane (si usas)
+# =========================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# =========================
+# Firebase / Env / Secrets
+# =========================
+.env
+.env.*
+*.pem
+*.p12
+*.mobileprovision
+
+# Firebase config backups / extras
+google-services.json.bak
+GoogleService-Info.plist.bak
+
+# =========================
+# Misc
+# =========================
+*.orig
+*.rej

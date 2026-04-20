@@ -12,6 +12,26 @@ dependencies:
   intl: ^0.18.1
 ```
 
+
+## 4.0.0
+- Updated plugin add Microservices new flow.
+
+## 5.0.0
+- Updated plugin only new flow available.
+
+## 6.0.0
+- Updated plugin add new relic report.
+
+## 6.0.0+1
+
+- Updated plugin metadata for pub.dev publication.
+- Improved README documentation and installation steps.
+- Updated example app to a modern Flutter-compatible project.
+- Added compatibility improvements for Android and iOS builds.
+- Updated dependencies and project configuration.
+
+
+
 * New ATHMovilPaymentSecureButton:
 ```dart
 ATHMovilPaymentSecureButton(style: Style.orange,

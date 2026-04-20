@@ -63,5 +63,10 @@ struct Item: Codable {
     let quantity: Int?
 }
 
+struct FindPaymentRequest: Encodable {
+    let ecommerceId: String
+    let publicToken: String
+}
+
 
 
