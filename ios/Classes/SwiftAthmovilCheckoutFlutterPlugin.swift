@@ -5,6 +5,8 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     
     static var channel: FlutterMethodChannel? = nil
     var buildType: String = ""
+    private var ecommerceId: String = "N/A"
+    private var publicToken: String = "N/A"
     static let defaultHeaders: [String: String] = {
 
         let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
@@ -125,28 +127,44 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
 
             let baseUrl = "https://" + baseUrlAWS
             let url = URL (string: baseUrl + ConstantsUtil.call.ATHM_API_PAYMENT)!
+            
             var request = URLRequest(url: url, timeoutInterval: 15)
             request.httpMethod = "post"
             let body = try? JSONEncoder().encode(paymentRequest)
+            
             let headers: [String: String] = [
                 "Content-Type": "application/json",
-                "Host": baseUrlAWS]
+                "Host": baseUrlAWS
+            ]
+            //Only for debug purposes, print the request information
+            #if DEBUG
+                print("URL: \(baseUrl + ConstantsUtil.call.ATHM_API_PAYMENT)")
+                print("headers: \(headers)")
+                print("body: \(String(data: body ?? Data(), encoding: .utf8) ?? "")")
+            #endif
+
             request.httpBody = body
             request.allHTTPHeaderFields = headers
             urlSesion.dataTask(with: request) { (responseData, urlResponse, error) in
                 LoadingView.removeLoadign()
                 guard let responseData = responseData else {
-                    Self.channel?.invokeMethod(
-                        ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
-                    return
                     NewRelicConfig.sendEventToNewRelic(
                         eventType: ConstantsUtil.nr.INIT_PAYMENT_FAILURE,
                         paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
                         buildType: self.buildType,
                         paymentReference: ConstantsUtil.nr.FAILED_ERROR
                     )
+                    Self.channel?.invokeMethod(
+                        ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
+                    return
                 }
                 let responsePayment = try? JSONDecoder().decode(PaymentResponse.self, from: responseData)
+                
+                //Only for debug purposes, print the request information
+                #if DEBUG
+                    print("responsePayment \(String(data: responseData ?? Data(), encoding: .utf8) ?? "")")
+                #endif
+                
                 guard let responsePayment = responsePayment else {
                     Self.channel?.invokeMethod(
                         ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: ConstantsUtil.request.ATHM_ERROR)
@@ -160,6 +178,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
                     let ecommerceId = responsePayment.data?.ecommerceId
                     let scheme = paymentRequest.callbackSchema
                     let ecommerceStatus = responsePayment.status
+                    self.publicToken = paymentRequest.publicToken ?? ""
                     let securePayment: Any  =
                     [
                         "ecommerceId": ecommerceId ?? "",
@@ -214,7 +233,7 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     
     private func _validateIntentResponse(jsonResponse:String, authToken:String){
         let jsonResponseData = Data(jsonResponse.utf8)
-         if let jsonDict = try? JSONSerialization.jsonObject(with: jsonResponseData) as? [String: Any] {
+        if let jsonDict = try? JSONSerialization.jsonObject(with: jsonResponseData) as? [String: Any] {
             ecommerceId = jsonDict["ecommerceId"] as? String ?? "N/A"
         }
         do{
@@ -254,76 +273,205 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
         do{
             var athmMovilPaymentResponse = try JSONDecoder().decode(ATHMovilPaymentResponse.self, from: jsonResponseData)
             let baseUrl = "https://" + baseUrlAWS
-            let url = URL (string: baseUrl + ConstantsUtil.call.ATHM_API_AUTHORIZATION)!
+            let url = URL(string: baseUrl + ConstantsUtil.call.ATHM_API_AUTHORIZATION)!
             var request = URLRequest(url: url, timeoutInterval: 15)
             request.httpMethod = "post"
-            let authorization = "Bearer \(authToken)"
+            
             let headers: [String: String] = [
                 "Content-Type": "application/json",
-                "Authorization": authorization,
+                "Authorization": "Bearer \(authToken)",
                 "Host": baseUrlAWS]
             request.allHTTPHeaderFields = headers
+
+            //Only for debug purposes, print the request information
+            #if DEBUG
+                print("Request URL: \(url.absoluteString)")
+                print("Request Headers: \(headers)")
+            #endif
+
             urlSesion.dataTask(with: request) { (responseData, urlResponse, error) in
-                LoadingView.removeLoadign()
-                guard let responseData = responseData else {
-                    NewRelicConfig.sendEventToNewRelic(
-                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
-                        paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
-                        buildType: self.buildType,
-                        paymentReference: jsonResponse ?? "N/A"
-
-                    )
-                    self.failedResult(jsonResponse:jsonResponse)
-                    return
-                }
-                let responseAuthorization = try? JSONDecoder().decode(AuthorizationResponse.self, from: responseData)
-                guard let responseAuthorization = responseAuthorization else{
-                    NewRelicConfig.sendEventToNewRelic(
-                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
-                        paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
-                        buildType: self.buildType,
-                        paymentReference: jsonResponse ?? "N/A"
-                    )
-                    self.failedResult(jsonResponse:jsonResponse)
-                    return
-                }
-                
-                if responseAuthorization.status != ATHMStatus.error  {
-                    //RESET TOKEN AUTHORIZATION
-                    UserDefaults.standard.set("", forKey: "flutter.authToken")
-                    PaymentResultFlag.shared.setPaymentRequest(paymentRequest: nil)
-                    //SET PARAMS RESPONSE AUTHORIZATION
-                    let dailyTransactionId = Int(responseAuthorization.data?.dailyTransactionId ?? "0") ?? 0
-                    let statusString = responseAuthorization.status?.rawValue
-                    athmMovilPaymentResponse.dailyTransactionID = dailyTransactionId
-                    athmMovilPaymentResponse.referenceNumber = responseAuthorization.data?.referenceNumber
-                    athmMovilPaymentResponse.fee = responseAuthorization.data?.fee ?? 0.0
-                    athmMovilPaymentResponse.netAmount = responseAuthorization.data?.netAmount ?? 0.0
-                    do {
-                        let encodedData = try JSONEncoder().encode(athmMovilPaymentResponse)
-                        let paymentResult = String(data: encodedData, encoding: .utf8)
+                DispatchQueue.main.async {
+                    LoadingView.removeLoadign()
+                    guard let responseData = responseData else {
                         NewRelicConfig.sendEventToNewRelic(
-                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_SUCCESS,
-                            paymentStatus: statusString,
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
                             buildType: self.buildType,
-                            paymentReference: responseAuthorization.data?.ecommerceId ?? ""
-                        )
-                        Self.channel?.invokeMethod(
-                            ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: paymentResult
+                            paymentReference: jsonResponse ?? "N/A"
 
                         )
-                    } catch {
-                        self.failedResult(jsonResponse:jsonResponse)
+                        self.findPayment(jsonResponse: jsonResponse, authToken: authToken);
+                        return
                     }
-                }else{
-                    self.failedResult(jsonResponse:jsonResponse)
-                    NewRelicConfig.sendEventToNewRelic(
-                        eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
-                        paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
-                        buildType: self.buildType,
-                        paymentReference: jsonResponse ?? "N/A"
+                    let responseAuthorization = try? JSONDecoder().decode(AuthorizationResponse.self, from: responseData)
+                    
+                    //Only for debug purposes, print the request information
+                    #if DEBUG
+                        print("Response responseAuthorization \(String(data: responseData ?? Data(), encoding: .utf8) ?? "")")
+                    #endif
+                    guard let responseAuthorization = responseAuthorization else{
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                            buildType: self.buildType,
+                            paymentReference: jsonResponse ?? "N/A"
+                        )
+                        self.findPayment(jsonResponse: jsonResponse, authToken: authToken);
+                        return
+                    }
+                    
+                    if responseAuthorization.status != ATHMStatus.error  {
+                        //RESET TOKEN AUTHORIZATION
+                        UserDefaults.standard.set("", forKey: "flutter.authToken")
+                        PaymentResultFlag.shared.setPaymentRequest(paymentRequest: nil)
+                        //SET PARAMS RESPONSE AUTHORIZATION
+                        let dailyTransactionId = Int(responseAuthorization.data?.dailyTransactionId ?? "0") ?? 0
+                        let statusString = responseAuthorization.status?.rawValue
+                        athmMovilPaymentResponse.dailyTransactionID = dailyTransactionId
+                        athmMovilPaymentResponse.referenceNumber = responseAuthorization.data?.referenceNumber
+                        athmMovilPaymentResponse.fee = responseAuthorization.data?.fee ?? 0.0
+                        athmMovilPaymentResponse.netAmount = responseAuthorization.data?.netAmount ?? 0.0
+                        do {
+                            let encodedData = try JSONEncoder().encode(athmMovilPaymentResponse)
+                            let paymentResult = String(data: encodedData, encoding: .utf8)
+                            NewRelicConfig.sendEventToNewRelic(
+                                eventType: ConstantsUtil.nr.FINISH_PAYMENT_SUCCESS,
+                                paymentStatus: statusString,
+                                buildType: self.buildType,
+                                paymentReference: responseAuthorization.data?.ecommerceId ?? ""
+                            )
+                            Self.channel?.invokeMethod(
+                                ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: paymentResult
 
-                    )
+                            )
+                        } catch {
+                            self.findPayment(jsonResponse: jsonResponse, authToken: authToken);
+                        }
+                    }else{
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                            buildType: self.buildType,
+                            paymentReference: jsonResponse ?? "N/A"
+
+                        )
+                        self.findPayment(jsonResponse: jsonResponse, authToken: authToken);
+                    }
+                }
+            }.resume()
+        }catch{
+            LoadingView.removeLoadign()
+            NewRelicConfig.sendEventToNewRelic(
+                eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                buildType: self.buildType,
+                paymentReference: jsonResponse ?? "N/A"
+            )
+            self.findPayment(jsonResponse: jsonResponse, authToken: authToken);
+        }
+    }
+
+    private func findPayment(jsonResponse: String, authToken: String){
+        LoadingView.showLoading()
+        let jsonResponseData = Data(jsonResponse.utf8)
+        do{
+            var athmMovilPaymentResponse = try JSONDecoder().decode(ATHMovilPaymentResponse.self, from: jsonResponseData)
+            let baseUrl = "https://" + baseUrlAWS
+            let url = URL (string: baseUrl + ConstantsUtil.call.ATHM_API_FINDPAYMENT)!
+            var request = URLRequest(url: url, timeoutInterval: 15)
+            request.httpMethod = "post"
+
+            let headers: [String: String] = [
+                "Content-Type": "application/json",
+                "Authorization": "Bearer \(authToken)",
+                "Host": baseUrlAWS
+            ]
+            
+            let findPaymentRequest = FindPaymentRequest(
+                ecommerceId: self.ecommerceId,
+                publicToken: self.publicToken
+            )
+
+            let body = try? JSONEncoder().encode(findPaymentRequest)
+
+            request.allHTTPHeaderFields = headers
+            request.httpBody = body
+
+            //Only for debug purposes, print the request information
+            #if DEBUG
+                print("Request URL: \(url.absoluteString)")
+                print("Request Headers: \(headers)")
+                print("Request body: \(String(data: body ?? Data(), encoding: .utf8) ?? "")")
+            #endif
+
+            urlSesion.dataTask(with: request) { (responseData, urlResponse, error) in
+                DispatchQueue.main.async {
+                    LoadingView.removeLoadign()
+                    guard let responseData = responseData else {
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.INIT_NETWORK_ERROR,
+                            buildType: self.buildType,
+                            paymentReference: jsonResponse ?? "N/A"
+
+                        )
+                        self.failedResult(jsonResponse:jsonResponse)
+                        return
+                    }
+                    let responseFindPayment = try? JSONDecoder().decode(AuthorizationResponse.self, from: responseData)
+                    
+                    //Only for debug purposes, print the request information
+                    #if DEBUG
+                        print("Response responseFindPayment \(String(data: responseData ?? Data(), encoding: .utf8) ?? "")")
+                    #endif
+
+                    guard let responseFindPayment = responseFindPayment else{
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                            buildType: self.buildType,
+                            paymentReference: jsonResponse ?? "N/A"
+                        )
+                        self.failedResult(jsonResponse:jsonResponse)
+                        return
+                    }
+                    
+                    if responseFindPayment.status != ATHMStatus.error  {
+                        //RESET TOKEN AUTHORIZATION
+                        UserDefaults.standard.set("", forKey: "flutter.authToken")
+                        PaymentResultFlag.shared.setPaymentRequest(paymentRequest: nil)
+                        //SET PARAMS RESPONSE AUTHORIZATION
+                        let dailyTransactionId = Int(responseFindPayment.data?.dailyTransactionId ?? "0") ?? 0
+                        let statusString = responseFindPayment.status?.rawValue
+                        athmMovilPaymentResponse.dailyTransactionID = dailyTransactionId
+                        athmMovilPaymentResponse.referenceNumber = responseFindPayment.data?.referenceNumber
+                        athmMovilPaymentResponse.fee = responseFindPayment.data?.fee ?? 0.0
+                        athmMovilPaymentResponse.netAmount = responseFindPayment.data?.netAmount ?? 0.0
+                        do {
+                            let encodedData = try JSONEncoder().encode(athmMovilPaymentResponse)
+                            let paymentResult = String(data: encodedData, encoding: .utf8)
+                            NewRelicConfig.sendEventToNewRelic(
+                                eventType: ConstantsUtil.nr.FINISH_PAYMENT_SUCCESS,
+                                paymentStatus: statusString,
+                                buildType: self.buildType,
+                                paymentReference: responseFindPayment.data?.ecommerceId ?? ""
+                            )
+                            Self.channel?.invokeMethod(
+                                ConstantsUtil.call.ATHM_PAYMENT_RESULT,arguments: paymentResult
+
+                            )
+                        } catch {
+                            self.failedResult(jsonResponse:jsonResponse)
+                        }
+                    }else{
+                        self.failedResult(jsonResponse:jsonResponse)
+                        NewRelicConfig.sendEventToNewRelic(
+                            eventType: ConstantsUtil.nr.FINISH_PAYMENT_FAILURE,
+                            paymentStatus: ConstantsUtil.nr.FAILED_ERROR,
+                            buildType: self.buildType,
+                            paymentReference: jsonResponse ?? "N/A"
+                        )
+                    }
                 }
             }.resume()
         }catch{
@@ -372,9 +520,10 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
             case (_, true, false):
                 return ConstantsUtil.call.ATHM_PROD_URL + ConstantsUtil.call.ATHM_MOBILE_DUMMY
             default:
-                return ConstantsUtil.call.ATHM_PROD_URL + ConstantsUtil.call.ATHM_MOBILE
+                return ConstantsUtil.call.ATHM_PROD_URL + ConstantsUtil.call.ATHM_MOBILE_SECURE
             }
     }
+    
     
     private func validateCurrentPaymentInMemory(){
         /// Get authToken
@@ -444,14 +593,11 @@ public class SwiftAthmovilCheckoutFlutterPlugin: NSObject, FlutterPlugin {
     }
 
     private func getURL() -> String {
-        if buildType == ".piloto"{
-            return "https://piloto.athmovil.com"
-        }
         return "https://www.athmovil.com"
     }
 
     private var baseUrlAWS: String {
-     return  "payments.athmovil.com"
+        return  "payments.athmovil.com"
     }
     
     struct ConsultTransaction: Encodable {

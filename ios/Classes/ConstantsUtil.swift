@@ -26,6 +26,7 @@ public struct ConstantsUtil {
         static let ATHM_CHANNEL_NAME = "com.evertecinc/athmovil_checkout_flutter"
         static let ATHM_PAYMENT_RESULT = "paymentResult"
         static let ATHM_PAYMENT_URL = "/rs/eCommerceTransfer/consultTransactionStatus"
+        static let ATHM_TEST_URL = "https://athmovil-ios-qa.web.app/e-commerce/"
         static let ATHM_PROD_URL = "https://athmovil-ios.web.app/e-commerce/"
         static let ATHM_MOBILE = "mobile"
         static let ATHM_MOBILE_DUMMY = "mobileDummy"
@@ -34,6 +35,7 @@ public struct ConstantsUtil {
         static let ATHM_AUTHORIZATION_PAYMENT = "authorizationPayment"
         static let ATHM_API_PAYMENT = "/api/business-transaction/ecommerce/payment"
         static let ATHM_API_AUTHORIZATION = "/api/business-transaction/ecommerce/authorization"
+        static let ATHM_API_FINDPAYMENT =   "/api/business-transaction/ecommerce/business/findPayment"
         
     }
     struct nr {

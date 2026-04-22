@@ -16,10 +16,6 @@ class ConstantsUtil {
         const val FAILED_PAYMENT_STATUS = "FAILED"
         const val EXPIRED_PAYMENT_STATUS = "EXPIRED"
         const val CANCELLED_PAYMENT_STATUS = "CANCELLED"
-
-
-
-
     }
 
     object RequestConstants {
@@ -52,8 +48,11 @@ class ConstantsUtil {
         const val ATHM_PRODUCTION_URL = "https://www.athmovil.com"
         const val ATHM_PILOTO_URL = "https://piloto.athmovil.com"
         const val ATHM_AWS_PROD_URL = "payments.athmovil.com"
+        const val ATHM_AWS_CERT_URL = "certpayments.athmovil.com"
+        const val ATHM_AWS_QA_URL = "devpayments.athmovil.com"
         const val ATHM_API_PAYMENT = "/api/business-transaction/ecommerce/payment"
         const val ATHM_API_AUTHORIZATION = "/api/business-transaction/ecommerce/authorization"
+        const val ATHM_API_FINDPAYMENT =   "/api/business-transaction/ecommerce/business/findPayment"
         const val ATHM_SEND_PAYMENT = "sendPayment"
         const val ATHM_SEND_PAYMENT_RESULT = "sendPaymentResult"
         

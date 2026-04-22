@@ -9,10 +9,12 @@ import retrofit2.http.POST
 import com.evertec.athmovil.athmovil_checkout_flutter.util.ConstantsUtil.RequestConstants.ATHM_API_ROUTE
 import com.evertec.athmovil.athmovil_checkout_flutter.util.ConstantsUtil.RequestConstants.ATHM_API_PAYMENT
 import com.evertec.athmovil.athmovil_checkout_flutter.util.ConstantsUtil.RequestConstants.ATHM_API_AUTHORIZATION
+import com.evertec.athmovil.athmovil_checkout_flutter.util.ConstantsUtil.RequestConstants.ATHM_API_FINDPAYMENT
 import org.json.JSONObject
 import com.evertec.athmovil.athmovil_checkout_flutter.models.PaymentRequest
 import com.evertec.athmovil.athmovil_checkout_flutter.models.PaymentResponse
 import com.evertec.athmovil.athmovil_checkout_flutter.models.AuthorizationResponse
+import com.evertec.athmovil.athmovil_checkout_flutter.models.FindPaymentRequest
 
 interface PostService {
     @Headers("Content-type: application/json")
@@ -26,4 +28,8 @@ interface PostService {
     @Headers("Content-type: application/json")
     @POST(ATHM_API_AUTHORIZATION)
     fun authorizationPayment(@Header("Host") host: String) : Call<AuthorizationResponse>
+
+    @Headers("Content-type: application/json")
+    @POST(ATHM_API_FINDPAYMENT)
+    fun findPayment(@Header("Host") host: String, @Body body: FindPaymentRequest) : Call<AuthorizationResponse>
 }

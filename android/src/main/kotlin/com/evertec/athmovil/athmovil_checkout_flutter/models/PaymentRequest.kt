@@ -36,3 +36,8 @@ data class PaymentRequest (
     var phoneNumber: String = "",
 
 )
+
+data class FindPaymentRequest(
+    val ecommerceId: String,
+    val publicToken: String
+)
