@@ -30,6 +30,12 @@ dependencies:
 - Added compatibility improvements for Android and iOS builds.
 - Updated dependencies and project configuration.
 
+## 6.1.0
+- Updated, add findpayment service.
+
+## 6.1.1
+- Updated proguard file.
+
 
 
 * New ATHMovilPaymentSecureButton:

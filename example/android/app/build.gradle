@@ -41,11 +41,15 @@ android {
     }
     buildTypes {
         release {
+            minifyEnabled true
+            shrinkResources false
             signingConfig signingConfigs.release
             manifestPlaceholders = [applicationName: "io.flutter.app.FlutterApplication"]
         }
         debug {
-            manifestPlaceholders = [applicationName: "io.flutter.app.FlutterApplication"]
+            minifyEnabled true
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         build{
             manifestPlaceholders = [applicationName: "io.flutter.app.FlutterApplication"]

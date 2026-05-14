@@ -2,7 +2,9 @@ package com.evertec.athmovil.athmovil_checkout_flutter.models
 
 import com.evertec.athmovil.athmovil_checkout_flutter.models.Items
 import com.google.gson.annotations.SerializedName
+import androidx.annotation.Keep
 
+@Keep
 data class PaymentRequest (
 
     @SerializedName("env")
@@ -37,6 +39,7 @@ data class PaymentRequest (
 
 )
 
+@Keep
 data class FindPaymentRequest(
     val ecommerceId: String,
     val publicToken: String

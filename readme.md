@@ -34,7 +34,7 @@ Add the dependency to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  athmovil_checkout_flutter: ^6.0.0
+  athmovil_checkout_flutter: ^6.1.1
 ```
 
 ### Dependencies

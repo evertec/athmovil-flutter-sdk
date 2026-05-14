@@ -1,7 +1,7 @@
 name: athmovil_checkout_dummy
 description: Example app for the ATH Móvil Checkout Flutter plugin.
 publish_to: 'none'
-version: 6.1.0
+version: 6.1.1
 
 environment:
   sdk: '>=2.17.0 <4.0.0'
