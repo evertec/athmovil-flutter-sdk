@@ -1,6 +1,6 @@
 name: athmovil_checkout_flutter
 description: Flutter plugin for integrating the ATH Móvil Payment Secure Button on Android and iOS.
-version: 6.1.0
+version: 6.1.1
 homepage: https://github.com/evertec/athmovil-flutter-sdk
 repository: https://github.com/evertec/athmovil-flutter-sdk
 issue_tracker: https://github.com/evertec/athmovil-flutter-sdk/issues

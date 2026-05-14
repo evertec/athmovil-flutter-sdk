@@ -1,7 +1,9 @@
 package com.evertec.athmovil.athmovil_checkout_flutter.models
 
 import com.google.gson.annotations.SerializedName
+import androidx.annotation.Keep
 
+@Keep
 data class PurchaseReturned (
 
     @SerializedName("completed")

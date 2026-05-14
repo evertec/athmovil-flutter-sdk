@@ -2,7 +2,9 @@ package com.evertec.athmovil.athmovil_checkout_flutter.models
 
 import com.evertec.athmovil.athmovil_checkout_flutter.models.Items
 import com.google.gson.annotations.SerializedName
+import androidx.annotation.Keep
 
+@Keep
 data class AutorizationData (
 
     @SerializedName("env")

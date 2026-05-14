@@ -25,6 +25,7 @@ android {
     }
     defaultConfig {
         minSdkVersion 21
+        consumerProguardFiles 'consumer-proguard-rules.pro'
     }
     lintOptions {
         disable 'InvalidPackage'
@@ -34,7 +35,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    // 🔧 ESTA ES LA SECCIÓN QUE AGREGA LA SOLUCIÓN
     kotlinOptions {
         jvmTarget = "17"
     }
