@@ -36,6 +36,9 @@ dependencies:
 ## 6.1.1
 - Updated proguard file.
 
+## 6.1.2
+- Updated Authorization and FindPayment Services.
+
 
 
 * New ATHMovilPaymentSecureButton:

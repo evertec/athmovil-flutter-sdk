@@ -55,7 +55,7 @@ android {
             manifestPlaceholders = [applicationName: "io.flutter.app.FlutterApplication"]
         }
     }
-    ndkVersion = "26.1.10909125"
+    ndkVersion = "28.2.13676358"
     buildToolsVersion '30.0.3'
 }
 

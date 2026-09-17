@@ -17,7 +17,7 @@ rootProject.allprojects {
 
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 36
     namespace "com.evertec.athmovil.athmovil_checkout_flutter"
 
     sourceSets {
@@ -39,7 +39,7 @@ android {
         jvmTarget = "17"
     }
 
-    ndkVersion '21.1.6352462'
+    ndkVersion '28.2.13676358'
     buildToolsVersion '30.0.3'
 }
 
