@@ -249,34 +249,11 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                         Log.e("URL",": ${call.request().url().url()}")
                         Log.e("Response body",": ${gson.toJson(response.body())}")
 
-                        if (response.isSuccessful && response.body() != null){
-                            //RESET TOKEN AUTHORIZATION
-                            val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
-                            sharedPref?.edit()?.putString("flutter.authToken","")?.apply()
-                            //SET PARAMS RESPONSE AUTHORIZATION
-                            val referenceNumber =  response.body()?.data?.referenceNumber ?: ""
-                            val dailyTransactionID =  response.body()?.data?.dailyTransactionID ?: ""
-                            val fee =  response.body()?.data?.fee ?: 0.0
-                            val netAmount =  response.body()?.data?.netAmount ?: 0.0
-                            val statusPayment = response.body()?.data?.ecommerceStatus ?: "N/A"
-                            val ecommerceId = response.body()?.data?.ecommerceId ?: "N/A"
-                            paymentReturn.referenceNumber = referenceNumber
-                            paymentReturn.dailyTransactionID = dailyTransactionID
-                            paymentReturn.fee = fee
-                            paymentReturn.netAmount = netAmount
-                            PaymentResultFlag.getApplicationInstance().paymentRequest = null
-                            val paymentResultString: String = Gson().toJson(paymentReturn)
-                            val merchantIdResponse =  appName?:"N/A"
-
-                            NewRelicConfig.sendEventToNewRelic(
-                                ConstantsUtil.FINISH_PAYMENT_SUCCESS,
-                                ecommerceId,
-                                merchantIdResponse,
-                                statusPayment,
-                                buildType
-                            )
-
-                            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
+                        if (response.isSuccessful && response.body() != null) {
+                            val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+                            if (!handleSuccessfulPayment(response, paymentReturn)) {
+                                findPayment(paymentResult)
+                            }
                         } else {
                             findPayment(paymentResult)
                         }
@@ -332,34 +309,11 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
                         Log.e("URL",": ${call.request().url().url()}")
                         Log.e("Response body",": ${gson.toJson(response.body())}")
 
-                        if (response.isSuccessful && response.body() != null){
-                            //RESET TOKEN AUTHORIZATION
-                            val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences",Context.MODE_PRIVATE)
-                            sharedPref?.edit()?.putString("flutter.authToken","")?.apply()
-                            //SET PARAMS RESPONSE AUTHORIZATION
-                            val referenceNumber =  response.body()?.data?.referenceNumber ?: ""
-                            val dailyTransactionID =  response.body()?.data?.dailyTransactionID ?: ""
-                            val fee =  response.body()?.data?.fee ?: 0.0
-                            val netAmount =  response.body()?.data?.netAmount ?: 0.0
-                            val statusPayment = response.body()?.data?.ecommerceStatus ?: "N/A"
-                            val ecommerceId = response.body()?.data?.ecommerceId ?: "N/A"
-                            paymentReturn.referenceNumber = referenceNumber
-                            paymentReturn.dailyTransactionID = dailyTransactionID
-                            paymentReturn.fee = fee
-                            paymentReturn.netAmount = netAmount
-                            PaymentResultFlag.getApplicationInstance().paymentRequest = null
-                            val paymentResultString: String = Gson().toJson(paymentReturn)
-                            val merchantIdResponse =  appName?:"N/A"
-
-                            NewRelicConfig.sendEventToNewRelic(
-                                ConstantsUtil.FINISH_PAYMENT_SUCCESS,
-                                ecommerceId,
-                                merchantIdResponse,
-                                statusPayment,
-                                buildType
-                            )
-
-                            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
+                        if (response.isSuccessful && response.body() != null) {
+                            val paymentReturn = Gson().fromJson(paymentResult, PurchaseReturned::class.java)
+                            if (!handleSuccessfulPayment(response, paymentReturn)) {
+                                failedResult(paymentResult)
+                            }
                         } else {
                             failedResult(paymentResult)
                         }
@@ -377,6 +331,41 @@ class AthmovilCheckoutFlutterPlugin : FlutterPlugin, MethodCallHandler, Activity
         }catch (e: Exception){
             failedResult(paymentResult)
         }
+    }
+
+    private fun handleSuccessfulPayment(
+        response: Response<AuthorizationResponse?>,
+        paymentReturn: PurchaseReturned
+    ): Boolean {
+        val data = response.body()?.data ?: return false
+        val statusPayment = data.ecommerceStatus.lowercase(Locale.getDefault())
+
+        if (statusPayment == "success" || statusPayment == "completed") {
+            val sharedPref = activity?.getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+            sharedPref?.edit()?.putString("flutter.authToken", "")?.apply()
+
+            paymentReturn.referenceNumber = data.referenceNumber ?: ""
+            paymentReturn.dailyTransactionID = data.dailyTransactionID ?: ""
+            paymentReturn.fee = data.fee ?: 0.0
+            paymentReturn.netAmount = data.netAmount ?: 0.0
+
+            PaymentResultFlag.getApplicationInstance().paymentRequest = null
+
+            val paymentResultString = Gson().toJson(paymentReturn)
+            val merchantIdResponse = appName ?: "N/A"
+
+            NewRelicConfig.sendEventToNewRelic(
+                ConstantsUtil.FINISH_PAYMENT_SUCCESS,
+                data.ecommerceId ?: "N/A",
+                merchantIdResponse,
+                data.ecommerceStatus ?: "N/A",
+                buildType
+            )
+
+            channel.invokeMethod(RequestConstants.ATHM_PAYMENT_RESULT, paymentResultString)
+            return true
+        }
+        return false
     }
 
     private fun failedResult(paymentResult: String){

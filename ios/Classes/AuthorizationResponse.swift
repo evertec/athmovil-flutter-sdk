@@ -15,6 +15,7 @@ struct AuthorizationResponse: Codable {
 }
 
 struct PaymentData: Codable {
+    let ecommerceStatus: String?
     let dailyTransactionId: String?
     let referenceNumber: String?
     let fee: Double?
